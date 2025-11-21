@@ -1,0 +1,54 @@
+package com.example.crudxtart.models;
+
+
+import jakarta.persistence.*;
+
+@Entity
+@Table (name = "empleados")
+public class Empleado
+{
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private int idEmpleado;
+
+    @Column(name = "nombre",nullable = false, length = 150)
+    private String nombre;
+
+    @Column(name = "email",length = 150, unique = true, nullable = false)
+    private String email;
+
+    @Column (name = "telefono",length = 20)
+    private String telefono;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_rol",unique = true)
+    private Roles_empleado id_rol;
+
+    public Empleado (String nombre, String email, String telefono) {
+        this.nombre = nombre;
+        this.email = email;
+        this.telefono = telefono;
+
+    }
+    public Empleado()
+    {}
+
+    public int getIdEmpleado() {
+        return idEmpleado;
+
+    }
+    public void setIdEmpleado(int idEmpleado) {
+        this.idEmpleado = idEmpleado;
+    }
+    public String getNombre() {
+        return nombre;
+    }
+    public void setNombre(String nombre) {}
+
+    public String getEmail() {
+        return email;
+    }
+    public void setEmail(String email) {}
+
+
+}
