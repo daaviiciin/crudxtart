@@ -2,11 +2,12 @@ package com.example.crudxtart.service;
 
 import com.example.crudxtart.models.Pagos;
 import com.example.crudxtart.repository.PagosRepository;
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
 import java.util.Date;
 import java.util.List;
-
+@ApplicationScoped
 public class PagosService
 {
     @Inject
