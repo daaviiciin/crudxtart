@@ -9,7 +9,7 @@ import jakarta.transaction.Transactional;
 import java.util.List;
 
 @ApplicationScoped
-public class PagosRepositoryImpl implements PagosRepository
+public class    PagosRepositoryImpl implements PagosRepository
 {
     @Inject
     EntityManager em;

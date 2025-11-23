@@ -19,9 +19,8 @@ public class TestServletClientes extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
-
-        clienteTest.testClientesRepository();
-        resp.getWriter().println("Prueba CRUD de Cliente ejecutada. Revisa la consola de Tomcat.");
+        clienteTest.testClienteRepository();
+        resp.getWriter().println("Prueba CRUD CLIENTES ejecutada. Revisa la consola de Tomcat.");
     }
 }
 

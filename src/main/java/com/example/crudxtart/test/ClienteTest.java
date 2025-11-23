@@ -13,7 +13,7 @@ public class ClienteTest {
     @Inject
     private ClienteService clienteService;
 
-    public ClienteTest () {}
+    public ClienteTest() {}
 
     public void testClienteRepository() {
         List<Cliente> lista = clienteService.findAllClientes();
@@ -23,11 +23,12 @@ public class ClienteTest {
                             " | Nombre: " + c.getNombre() +
                             " | Email: " + c.getEmail() +
                             " | Teléfono: " + c.getTelefono() +
-                            " | Tipo: " + c.getTipoCliente() +
-                            " | Fecha alta: " + c.getFechaAlta()
+                            " | Tipo: " + c.getTipo_cliente() +
+                            " | Fecha alta: " + c.getFecha_alta()
             );
         });
 
         Cliente cliente = new Cliente();
     }
 }
+

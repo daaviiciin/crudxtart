@@ -12,42 +12,26 @@ import java.util.List;
 public class ClienteRepositoryImpl implements ClienteRepository {
 
     @Inject
-    private EntityManager em;
+    EntityManager em;
 
-    public ClienteRepositoryImpl() {
-    }
+    public ClienteRepositoryImpl() {}
 
     @Override
     public List<Cliente> findAllClientes() {
-        return em.createQuery("SELECT c FROM Cliente c", Cliente.class)
-                .getResultList();
+        return em.createQuery("SELECT c FROM Cliente c", Cliente.class).getResultList();
     }
 
     @Override
     public Cliente findClienteById(int id) {
-        return em.find(Cliente.class, id);
-    }
-
-    @Override
-    @Transactional
-    public Cliente createCliente(Cliente c) {
-        em.persist(c);          // INSERT
+        Cliente c = em.find(Cliente.class, id);
         return c;
     }
 
     @Override
     @Transactional
-    public Cliente updateCliente(Cliente c) {
-        return em.merge(c);     // UPDATE
-    }
-
-    @Override
-    @Transactional
-    public void deleteById(int id) {
-        Cliente c = em.find(Cliente.class, id);
-        if (c != null) {
-            em.remove(c);       // DELETE
-        }
+    public Cliente createCliente(Cliente c) {
+        em.persist(c);
+        return c;
     }
 
     @Override
@@ -55,4 +39,26 @@ public class ClienteRepositoryImpl implements ClienteRepository {
     public void saveCliente(Cliente c) {
         em.merge(c);
     }
+
+    @Override
+    public void deleteById(int id) {
+
+    }
+
+    @Transactional
+    @Override
+    public void deletebyid(int id) {
+        Cliente c = em.find(Cliente.class, id);
+        if (c != null) {
+            em.remove(c);
+        }
+        return;
+    }
+
+    @Override
+    @Transactional
+    public Cliente updateCliente(Cliente c) {
+        return em.merge(c);
+    }
 }
+
