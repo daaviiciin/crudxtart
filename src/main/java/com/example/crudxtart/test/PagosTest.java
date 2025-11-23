@@ -1,7 +1,7 @@
 package com.example.crudxtart.test;
 
-import com.example.crudxtart.models.Factura;
 import com.example.crudxtart.models.Pagos;
+import com.example.crudxtart.models.Factura;
 import com.example.crudxtart.repository.PagosRepositoryImpl;
 import com.example.crudxtart.service.PagosService;
 import jakarta.annotation.PostConstruct;
@@ -16,8 +16,8 @@ public class PagosTest
     @Inject
     private PagosService pagosService;
 
-    public PagosTest () {
-    }
+    public PagosTest () {}
+
 
     public void testPagosRepository()
     {
@@ -34,15 +34,20 @@ public class PagosTest
         });
 
         Pagos pagos = new Pagos();
-        Factura factura = new Factura();
-        pagos.setFactura(factura);
-        pagos.setImporte(15.0);
+
+        Factura f = new Factura();
+        f.setId_factura(1);
+        pagos.setFactura(f);
+        pagos.setImporte(100);
         pagos.setMetodo_pago("Efectivo");
-        pagos.setEstado("Pendiente");
+        pagos.setEstado("pendiente");
+        pagos.setFecha_pago(new java.util.Date()); // añadi esta linea por chatgpt
 
         Pagos creado = pagosService.createPagos(pagos);
-        creado.setEstado("Confirmado");
-        Pagos actualizado = pagosService.updatePagos(creado);
-        pagosService.deletePagos(actualizado.getId_pago());
+
+        creado.setEstado("confirmado");
+        pagosService.updatePagos(creado);
+
+        pagosService.deletePagos(creado.getId_pago());
     }
 }
