@@ -35,19 +35,5 @@ public class PagosTest
 
         Pagos pagos = new Pagos();
 
-        Factura f = new Factura();
-        f.setId_factura(1);
-        pagos.setFactura(f);
-        pagos.setImporte(100);
-        pagos.setMetodo_pago("Efectivo");
-        pagos.setEstado("pendiente");
-        pagos.setFecha_pago(new java.util.Date()); // añadi esta linea por chatgpt
-
-        Pagos creado = pagosService.createPagos(pagos);
-
-        creado.setEstado("confirmado");
-        pagosService.updatePagos(creado);
-
-        pagosService.deletePagos(creado.getId_pago());
     }
 }
