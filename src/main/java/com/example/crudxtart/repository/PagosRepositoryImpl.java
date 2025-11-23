@@ -33,8 +33,8 @@ public class PagosRepositoryImpl implements PagosRepository
     @Transactional
     public Pagos createPagos(Pagos p)
     {
-         em.persist(p);
-         return p;
+        em.persist(p);
+        return p;
     }
 
     @Override
