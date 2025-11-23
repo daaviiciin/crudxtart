@@ -41,12 +41,7 @@ public class ClienteRepositoryImpl implements ClienteRepository {
     }
 
     @Override
-    public void deleteById(int id) {
-
-    }
-
     @Transactional
-    @Override
     public void deletebyid(int id) {
         Cliente c = em.find(Cliente.class, id);
         if (c != null) {

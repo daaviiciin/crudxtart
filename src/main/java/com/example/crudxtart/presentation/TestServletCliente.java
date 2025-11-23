@@ -11,7 +11,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
 @WebServlet("/testclientes")
-public class TestServletClientes extends HttpServlet {
+public class TestServletCliente extends HttpServlet {
 
     @Inject
     public ClienteTest clienteTest;
@@ -19,6 +19,7 @@ public class TestServletClientes extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
+
         clienteTest.testClienteRepository();
         resp.getWriter().println("Prueba CRUD CLIENTES ejecutada. Revisa la consola de Tomcat.");
     }

@@ -5,17 +5,13 @@ import com.example.crudxtart.repository.ClienteRepository;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
-import java.util.Date;
 import java.util.List;
 
 @ApplicationScoped
 public class ClienteService {
 
     @Inject
-    private ClienteRepository clienteRepository;
-
-    public ClienteService() {
-    }
+    ClienteRepository clienteRepository;
 
     public List<Cliente> findAllClientes() {
         return clienteRepository.findAllClientes();
@@ -36,21 +32,29 @@ public class ClienteService {
     }
 
     public void deleteCliente(int id) {
-        clienteRepository.deleteById(id);
+        clienteRepository.deletebyid(id);
     }
 
-    private void validarCliente(Cliente c) {
-        if (c.getNombre() == null || c.getNombre().trim().isEmpty()) {
-            throw new IllegalArgumentException("El nombre del cliente no puede estar vacío.");
+    private void validarCliente(Cliente cliente) {
+
+        if (cliente.getNombre() == null || cliente.getNombre().trim().isEmpty()) {
+            throw new IllegalArgumentException("El nombre del cliente es obligatorio.");
         }
 
-        if (c.getEmail() == null || !c.getEmail().contains("@")) {
-            throw new IllegalArgumentException("Email de cliente no válido.");
+        if (cliente.getEmail() != null && !cliente.getEmail().trim().isEmpty()) {
+            if (!cliente.getEmail().contains("@")) {
+                throw new IllegalArgumentException("El email del cliente no es válido: " + cliente.getEmail());
+            }
         }
 
-        if (c.getFechaAlta() != null && c.getFechaAlta().after(new Date())) {
-            throw new IllegalArgumentException("La fecha de alta no puede ser futura.");
+        if (cliente.getTelefono() != null && cliente.getTelefono().length() > 20) {
+            throw new IllegalArgumentException("El teléfono supera la longitud máxima permitida.");
+        }
+
+        if (cliente.getTipo_cliente() != null && cliente.getTipo_cliente().length() > 50) {
+            throw new IllegalArgumentException("El tipo de cliente supera la longitud máxima permitida.");
         }
     }
 }
+
 
