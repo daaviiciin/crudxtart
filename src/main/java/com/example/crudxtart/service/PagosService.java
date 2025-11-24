@@ -2,11 +2,12 @@ package com.example.crudxtart.service;
 
 import com.example.crudxtart.models.Pagos;
 import com.example.crudxtart.repository.PagosRepository;
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
 import java.util.Date;
 import java.util.List;
-
+@ApplicationScoped
 public class PagosService
 {
     @Inject
@@ -64,7 +65,7 @@ public class PagosService
         }
 
         Date hoy = new Date();
-        if (pago.getFecha_pago() != null && !hoy.before(pago.getFecha_pago())) {
+        if (pago.getFecha_pago() != null && pago.getFecha_pago().after(hoy)) { //antes era null && !hoy.before(pago.getFecha_pago())) {
             throw new IllegalArgumentException("La fecha de pago no puede ser futura.");
         }
     }

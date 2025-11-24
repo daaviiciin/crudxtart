@@ -9,7 +9,7 @@ import jakarta.transaction.Transactional;
 import java.util.List;
 
 @ApplicationScoped
-public class PagosRepositoryImpl implements PagosRepository
+public class    PagosRepositoryImpl implements PagosRepository
 {
     @Inject
     EntityManager em;
@@ -33,8 +33,8 @@ public class PagosRepositoryImpl implements PagosRepository
     @Transactional
     public Pagos createPagos(Pagos p)
     {
-         em.persist(p);
-         return p;
+        em.persist(p);
+        return p;
     }
 
     @Override
