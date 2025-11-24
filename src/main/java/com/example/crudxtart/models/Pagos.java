@@ -1,6 +1,7 @@
 package com.example.crudxtart.models;
 
 import jakarta.persistence.*;
+import jakarta.persistence.criteria.CriteriaBuilder;
 
 import java.util.Date;
 import java.util.Objects;
@@ -12,7 +13,7 @@ public class Pagos
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     @Column(name = "id_pago")
-    private int id_pago;
+    private Integer id_pago;
 
     @ManyToOne (fetch = FetchType.LAZY)
     @JoinColumn (name = "id_factura", nullable = false)
@@ -49,7 +50,7 @@ public class Pagos
         return id_pago;
     }
 
-    public void setId_pago(int id_pago) {
+    public void setId_pago(Integer id_pago) {
         this.id_pago = id_pago;
     }
 

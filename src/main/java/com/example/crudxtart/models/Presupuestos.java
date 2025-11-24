@@ -10,7 +10,7 @@ public class Presupuestos
 {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id_Presupuesto;
+    private Integer id_Presupuesto;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_empleado",nullable = false)
@@ -47,7 +47,7 @@ public class Presupuestos
         return id_Presupuesto;
     }
 
-    public void setId_Presupuesto(int id_Presupuesto) {
+    public void setId_Presupuesto(Integer id_Presupuesto) {
         this.id_Presupuesto = id_Presupuesto;
     }
 

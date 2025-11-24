@@ -13,7 +13,7 @@ public class Producto
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id_producto;
+    private Integer id_producto;
 
     @Column(name = "nombre",length = 150,nullable = false)
     private String nombre;
@@ -49,7 +49,7 @@ public class Producto
         return id_producto;
     }
 
-    public void setId_producto(int id_producto) {
+    public void setId_producto(Integer id_producto) {
         this.id_producto = id_producto;
     }
 

@@ -10,7 +10,7 @@ public class Roles_empleado
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     @Column(name = "id_rol")
-    private int id_rol;
+    private Integer id_rol;
 
     @Column(name = "nombre_rol", length = 150, nullable = false, unique = true)
     private String nombre_rol;
@@ -30,7 +30,7 @@ public class Roles_empleado
     {
         return id_rol;
     }
-    public void setId_rol(int id_rol)
+    public void setId_rol(Integer id_rol)
     {
         this.id_rol = id_rol;
     }

@@ -14,7 +14,7 @@ public class Factura
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     @Column(name = "id_factura")
-    private int id_factura;
+    private Integer id_factura;
 
     @Column(name = "num_factura",unique = true,length = 50,nullable = false)
     private String num_factura;
@@ -62,7 +62,7 @@ public class Factura
         return id_factura;
     }
 
-    public void setId_factura(int id_factura) {
+    public void setId_factura(Integer id_factura) {
         this.id_factura = id_factura;
     }
 
@@ -102,23 +102,7 @@ public class Factura
         return total;
     }
 
-    public void setTotal(double total) {
-        this.total = total;
+
     }
 
-    public String getEstado() {
-        return estado;
-    }
 
-    public void setEstado(String estado) {
-        this.estado = estado;
-    }
-
-    public List<Pagos> getPagos() {
-        return pagos;
-    }
-
-    public void setPagos(List<Pagos> pagos) {
-        this.pagos = pagos;
-    }
-}

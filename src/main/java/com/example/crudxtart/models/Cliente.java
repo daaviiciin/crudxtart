@@ -14,7 +14,7 @@ public class Cliente
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id_cliente;
+    private Integer id_cliente;
 
     @Column(name = "nombre", length = 150, nullable = false)
     private String nombre;
@@ -42,7 +42,7 @@ public class Cliente
     public Cliente()
     {}
 
-    public Cliente(String nombre, int id_cliente, String email, String telefono, String tipo_cliente, Date fecha_alta) {
+    public Cliente(String nombre, Integer id_cliente, String email, String telefono, String tipo_cliente, Date fecha_alta) {
         this.nombre = nombre;
         this.id_cliente = id_cliente;
         this.email = email;
@@ -55,7 +55,7 @@ public class Cliente
         return id_cliente;
     }
 
-    public void setId_cliente(int id_cliente) {
+    public void setId_cliente(Integer id_cliente) {
         this.id_cliente = id_cliente;
     }
 

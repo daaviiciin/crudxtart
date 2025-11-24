@@ -9,7 +9,7 @@ public class Empleado
 {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int idEmpleado;
+    private Integer idEmpleado;
 
     @Column(name = "nombre",nullable = false, length = 150)
     private String nombre;
@@ -37,7 +37,7 @@ public class Empleado
         return idEmpleado;
 
     }
-    public void setIdEmpleado(int idEmpleado) {
+    public void setIdEmpleado(Integer idEmpleado) {
         this.idEmpleado = idEmpleado;
     }
     public String getNombre() {

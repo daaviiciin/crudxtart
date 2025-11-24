@@ -11,7 +11,7 @@ public class FacturaProducto
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id_factura_producto;
+    private Integer id_factura_producto;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_factura",nullable = false)
@@ -47,7 +47,7 @@ public class FacturaProducto
         return id_factura_producto;
     }
 
-    public void setId_factura_producto(int id_factura_producto) {
+    public void setId_factura_producto(Integer id_factura_producto) {
         this.id_factura_producto = id_factura_producto;
     }
 
