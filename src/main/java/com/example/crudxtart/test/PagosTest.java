@@ -10,23 +10,22 @@ import java.util.Date;
 import java.util.List;
 
 @ApplicationScoped
-public class PagosTest {
-
+public class PagosTest
+{
     @Inject
     private PagosService pagosService;
 
-    public PagosTest() {
-    }
+    public PagosTest () {}
 
-    public void testPagosRepository() {
-
-        // 1. LISTA INICIAL
-        System.out.println("===== LISTA INICIAL DE PAGOS =====");
+    public void testPagosRepository()
+    {
+        // LISTAR PAGOS EXISTENTES
+        System.out.println("========== LISTA INICIAL DE PAGOS ==========");
         List<Pagos> lista = pagosService.findAllPagos();
         lista.forEach(p -> {
             System.out.println(
                     "ID: " + p.getId_pago() +
-                            " | Factura: " + (p.getFactura() != null ? p.getFactura().getId_factura() : "null") +
+                            " | Factura: " + p.getFactura().getId_factura()+
                             " | Fecha: " + p.getFecha_pago() +
                             " | Importe: " + p.getImporte() +
                             " | Método: " + p.getMetodo_pago() +
@@ -34,37 +33,23 @@ public class PagosTest {
             );
         });
 
-        System.out.println("===== CREAR NUEVO PAGO =====");
-        Pagos nuevo = new Pagos();
+        // CREAR NUEVO PAGO (SE QUEDA EN BD, SIN DELETE)
+        System.out.println("========== CREANDO NUEVO PAGO ==========");
+        Pagos pagos = new Pagos();
 
+        // Necesitas una factura que exista en la BD (por ejemplo, id 1)
         Factura factura = new Factura();
-        factura.setId_factura(1);
-        nuevo.setFactura(factura);
 
-        nuevo.setFecha_pago(new Date());
-        nuevo.setImporte(123.45);
-        nuevo.setMetodo_pago("transferencia");
-        nuevo.setEstado("pendiente");
+        pagos.setFactura(factura);
+        pagos.setImporte(50.0);
+        pagos.setMetodo_pago("efectivo");   // válido según tu validación
+        pagos.setEstado("pendiente");       // válido según tu validación
+        pagos.setFecha_pago(new Date());    // hoy
 
-        nuevo = pagosService.createPagos(nuevo);
-        System.out.println(">>> Creado pago con ID: " + nuevo.getId_pago());
-
-        System.out.println("===== BORRAR PAGO CREADO =====");
-        int idBorrar = nuevo.getId_pago();
-        pagosService.deletePagos(idBorrar);
-        System.out.println(">>> Borrado pago con ID: " + idBorrar);
-
-        System.out.println("===== LISTA FINAL DE PAGOS =====");
-        List<Pagos> listaFinal = pagosService.findAllPagos();
-        listaFinal.forEach(p -> {
-            System.out.println(
-                    "ID: " + p.getId_pago() +
-                            " | Factura: " + (p.getFactura() != null ? p.getFactura().getId_factura() : "null") +
-                            " | Fecha: " + p.getFecha_pago() +
-                            " | Importe: " + p.getImporte() +
-                            " | Método: " + p.getMetodo_pago() +
-                            " | Estado: " + p.getEstado()
-            );
-        });
+        Pagos creado = pagosService.createPagos(pagos);
+        System.out.println("Pago creado -> ID: " + creado.getId_pago()
+                + " | Factura: " + creado.getFactura().getId_factura()
+                + " | Importe: " + creado.getImporte()
+                + " | Estado: " + creado.getEstado());
     }
 }
