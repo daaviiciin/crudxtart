@@ -17,6 +17,7 @@ public class EmpleadoRepositoryImpl implements EmpleadoRepository {
     public EmpleadoRepositoryImpl() {}
 
     @Override
+    @Transactional
     public List<Empleado> findAllEmpleados() {
         return em.createQuery("SELECT e FROM Empleado e", Empleado.class).getResultList();
     }

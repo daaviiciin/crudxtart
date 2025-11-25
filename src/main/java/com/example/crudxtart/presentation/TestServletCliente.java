@@ -20,8 +20,13 @@ public class TestServletCliente extends HttpServlet {
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
 
-        clienteTest.testClienteRepository();
-        resp.getWriter().println("Prueba CRUD CLIENTES ejecutada. Revisa la consola de Tomcat.");
+        try {
+            clienteTest.testClienteRepository();
+        }catch (Exception ex){
+            ex.printStackTrace();
+        }
+
+        resp.getWriter().println("Prueba CRUD ejecutada. Revisa la consola de Tomcat.");
     }
 }
 

@@ -19,7 +19,7 @@ public class EmpleadoTest {
         List<Empleado> lista = empleadoService.findAllEmpleados();
         lista.forEach(e -> {
             System.out.println(
-                    "ID: " + e.getIdEmpleado() +
+                    "ID: " + e.getId_empleado() +
                             " | Nombre: " + e.getNombre() +
                             " | Email: " + e.getEmail() +
                             " | Teléfono: " + e.getTelefono()

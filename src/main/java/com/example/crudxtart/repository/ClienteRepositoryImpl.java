@@ -17,18 +17,23 @@ public class ClienteRepositoryImpl implements ClienteRepository {
     public ClienteRepositoryImpl() {}
 
     @Override
-    public List<Cliente> findAllClientes() {
+    public List<Cliente> findAllClientes()
+    {
+
+
         return em.createQuery("SELECT c FROM Cliente c", Cliente.class).getResultList();
     }
 
     @Override
-    public Cliente findClienteById(Integer id) {
+    public Cliente findClienteById(Integer id)
+    {
+        em.getTransaction().begin();
         Cliente c = em.find(Cliente.class, id);
+        em.getTransaction().commit();
         return c;
     }
 
     @Override
-    @Transactional
     public Cliente createCliente(Cliente c)
     {
         try
@@ -46,20 +51,20 @@ public class ClienteRepositoryImpl implements ClienteRepository {
     }
 
     @Override
-    @Transactional
     public void saveCliente(Cliente c) {
         em.merge(c);
     }
 
     @Override
-    @Transactional
     public void deletebyid(Integer id) {
         try {
             Cliente c = em.find(Cliente.class, id);
-            if (c != null) {
+            if (c != null)
+            {
+                em.getTransaction().begin();
                 em.remove(c);
+                em.getTransaction().commit();
             }
-            return;
         }catch (Exception ex)
         {
             ex.printStackTrace();
@@ -67,7 +72,6 @@ public class ClienteRepositoryImpl implements ClienteRepository {
     }
 
     @Override
-    @Transactional
     public Cliente upLocalDateCliente(Cliente c)
     {
         try {

@@ -35,6 +35,10 @@ public class Cliente
     @Column(name = "fecha_alta")
     private LocalDate fecha_alta;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_empleado_responsable",nullable = true)
+    private Empleado empleado_responsable;
+
     @OneToMany(mappedBy = "cliente_pagador",cascade = CascadeType.ALL,orphanRemoval = true)
     List<Factura> facturas=new ArrayList<>();
 
@@ -55,7 +59,7 @@ public class Cliente
         this.fecha_alta = fecha_alta;
     }
 
-    public int getId_cliente() {
+    public Integer getId_cliente() {
         return id_cliente;
     }
 
@@ -110,4 +114,13 @@ public class Cliente
     public void setPassword(String password) {
         this.password = password;
     }
+
+    public Empleado getEmpleado_responsable() {
+        return empleado_responsable;
+    }
+
+    public void setEmpleado_responsable(Empleado empleado_responsable) {
+        this.empleado_responsable = empleado_responsable;
+    }
+
 }

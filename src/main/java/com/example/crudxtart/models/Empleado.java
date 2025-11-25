@@ -25,8 +25,10 @@ public class Empleado
     private String password;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_rol",unique = true)
+    @JoinColumn(name = "id_rol")
     private Roles_empleado id_rol;
+
+
 
     public Empleado (String nombre, String email, String telefono) {
         this.nombre = nombre;
@@ -37,11 +39,12 @@ public class Empleado
     public Empleado()
     {}
 
-    public int getIdEmpleado() {
+    public Integer getId_empleado() {
         return id_empleado;
     }
-    public void setIdEmpleado(Integer idEmpleado) {
-        this.id_empleado = idEmpleado;
+
+    public void setId_empleado(Integer id_empleado) {
+        this.id_empleado = id_empleado;
     }
 
     public String getNombre() {
@@ -76,7 +79,11 @@ public class Empleado
         this.id_rol = id_rol;
     }
 
-    public String getPassword() {}
+    public String getPassword() {
+        return password;
+    }
 
-    public void setPassword(String password) {}
+    public void setPassword(String password) {
+        this.password = password;
+    }
 }
