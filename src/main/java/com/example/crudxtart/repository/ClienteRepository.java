@@ -8,13 +8,13 @@ public interface ClienteRepository {
 
     public List<Cliente> findAllClientes();
 
-    public Cliente findClienteById(int id);
+    public Cliente findClienteById( Integer id);
 
     public void saveCliente(Cliente c);
 
-    public void deletebyid(int id);
+    public void deletebyid(Integer id);
 
-    public Cliente updateCliente(Cliente c);
+    public Cliente upLocalDateCliente(Cliente c);
 
     public Cliente createCliente(Cliente c);
 }

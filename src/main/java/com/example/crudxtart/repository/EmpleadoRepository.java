@@ -7,9 +7,9 @@ import java.util.List;
 public interface EmpleadoRepository {
 
     public List<Empleado> findAllEmpleados();
-    public Empleado findEmpleadoById(int id);
+    public Empleado findEmpleadoById(Integer id);
     public void saveEmpleado(Empleado e);
-    public void deletebyid(int id);
-    public Empleado updateEmpleado(Empleado e);
+    public void deletebyid(Integer id);
+    public Empleado upLocalDateEmpleado(Empleado e);
     public Empleado createEmpleado(Empleado e);
 }

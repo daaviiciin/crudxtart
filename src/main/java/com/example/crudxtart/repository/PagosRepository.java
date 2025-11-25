@@ -7,9 +7,9 @@ import java.util.List;
 public interface PagosRepository
 {
     public List<Pagos> findAllPagos();
-    public Pagos findPagosById(int id);
+    public Pagos findPagosById(Integer id);
     public void savePagos(Pagos p);
-    public void deletebyid(int id);
-    public Pagos updatePagos(Pagos p);
+    public void deletebyid(Integer id);
+    public Pagos upLocalDatePagos(Pagos p);
     public Pagos createPagos(Pagos p);
 }

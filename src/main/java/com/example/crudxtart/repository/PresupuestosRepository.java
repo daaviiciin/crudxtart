@@ -8,13 +8,13 @@ public interface PresupuestosRepository {
 
     public List<Presupuestos> findAllPresupuestos();
 
-    public Presupuestos findPresupuestoById(int id);
+    public Presupuestos findPresupuestoById(Integer id);
 
     public void savePresupuesto(Presupuestos p);
 
-    public void deletebyid(int id);
+    public void deletebyid(Integer id);
 
-    public Presupuestos updatePresupuesto(Presupuestos p);
+    public Presupuestos upLocalDatePresupuesto(Presupuestos p);
 
     public Presupuestos createPresupuesto(Presupuestos p);
 }

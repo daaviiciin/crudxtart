@@ -9,7 +9,8 @@ public class Empleado
 {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer idEmpleado;
+    @Column(name = "id_empleado")
+    private Integer id_empleado;
 
     @Column(name = "nombre",nullable = false, length = 150)
     private String nombre;
@@ -19,6 +20,9 @@ public class Empleado
 
     @Column (name = "telefono",length = 20)
     private String telefono;
+
+    @Column (name = "password",nullable = false,length = 150)
+    private String password;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_rol",unique = true)
@@ -34,10 +38,10 @@ public class Empleado
     {}
 
     public int getIdEmpleado() {
-        return idEmpleado;
+        return id_empleado;
     }
     public void setIdEmpleado(Integer idEmpleado) {
-        this.idEmpleado = idEmpleado;
+        this.id_empleado = idEmpleado;
     }
 
     public String getNombre() {
@@ -71,4 +75,8 @@ public class Empleado
     public void setId_rol(Roles_empleado id_rol) {
         this.id_rol = id_rol;
     }
+
+    public String getPassword() {}
+
+    public void setPassword(String password) {}
 }

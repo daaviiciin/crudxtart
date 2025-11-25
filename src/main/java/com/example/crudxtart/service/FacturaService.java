@@ -5,7 +5,8 @@ import com.example.crudxtart.repository.FacturaRepository;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
-import java.util.Date;
+import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
 
 @ApplicationScoped
@@ -27,9 +28,9 @@ public class FacturaService {
         return facturaRepository.createFactura(f);
     }
 
-    public Factura updateFactura(Factura f) {
+    public Factura upLocalDateFactura(Factura f) {
         validarFactura(f);
-        return facturaRepository.updateFactura(f);
+        return facturaRepository.upLocalDateFactura(f);
     }
 
     public void deleteFactura(int id) {
@@ -61,11 +62,13 @@ public class FacturaService {
             }
         }
 
-        Date hoy = new Date();
+        LocalDate hoy = LocalDate.now();
+
         if (factura.getFecha_emision() == null) {
             throw new IllegalArgumentException("La fecha de emisión es obligatoria.");
         }
-        if (factura.getFecha_emision().after(hoy)) {
+
+        if (factura.getFecha_emision().isAfter(hoy)) {
             throw new IllegalArgumentException("La fecha de emisión no puede ser futura.");
         }
     }

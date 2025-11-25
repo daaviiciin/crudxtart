@@ -22,15 +22,26 @@ public class ClienteRepositoryImpl implements ClienteRepository {
     }
 
     @Override
-    public Cliente findClienteById(int id) {
+    public Cliente findClienteById(Integer id) {
         Cliente c = em.find(Cliente.class, id);
         return c;
     }
 
     @Override
     @Transactional
-    public Cliente createCliente(Cliente c) {
-        em.persist(c);
+    public Cliente createCliente(Cliente c)
+    {
+        try
+        {
+            em.getTransaction().begin();
+            em.persist(c);
+            em.getTransaction().commit();
+        }
+        catch (Exception ex)
+        {
+            em.getTransaction().rollback();
+            ex.printStackTrace();
+        }
         return c;
     }
 
@@ -42,18 +53,32 @@ public class ClienteRepositoryImpl implements ClienteRepository {
 
     @Override
     @Transactional
-    public void deletebyid(int id) {
-        Cliente c = em.find(Cliente.class, id);
-        if (c != null) {
-            em.remove(c);
+    public void deletebyid(Integer id) {
+        try {
+            Cliente c = em.find(Cliente.class, id);
+            if (c != null) {
+                em.remove(c);
+            }
+            return;
+        }catch (Exception ex)
+        {
+            ex.printStackTrace();
         }
-        return;
     }
 
     @Override
     @Transactional
-    public Cliente updateCliente(Cliente c) {
-        return em.merge(c);
+    public Cliente upLocalDateCliente(Cliente c)
+    {
+        try {
+            em.getTransaction().begin();
+            em.merge(c);
+            em.getTransaction().commit();
+        }catch (Exception ex)
+        {
+            ex.printStackTrace();
+        }
+        return c;
     }
 }
 

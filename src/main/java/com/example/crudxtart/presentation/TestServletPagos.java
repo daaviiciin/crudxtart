@@ -19,7 +19,13 @@ public class TestServletPagos extends HttpServlet
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        pagosTest.testPagosRepository();
+        try {
+            pagosTest.testPagosRepository();
+        }catch (Exception ex){
+            ex.printStackTrace();
+        }
+
+
         resp.getWriter().println("Prueba CRUD ejecutada. Revisa la consola de Tomcat.");
     }
 }

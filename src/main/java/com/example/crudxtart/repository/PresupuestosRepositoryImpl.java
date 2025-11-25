@@ -23,7 +23,7 @@ public class PresupuestosRepositoryImpl implements PresupuestosRepository {
     }
 
     @Override
-    public Presupuestos findPresupuestoById(int id) {
+    public Presupuestos findPresupuestoById(Integer id) {
         Presupuestos p = em.find(Presupuestos.class, id);
         return p;
     }
@@ -43,7 +43,7 @@ public class PresupuestosRepositoryImpl implements PresupuestosRepository {
 
     @Override
     @Transactional
-    public void deletebyid(int id) {
+    public void deletebyid(Integer id) {
         Presupuestos p = em.find(Presupuestos.class, id);
         if (p != null) {
             em.remove(p);
@@ -53,7 +53,7 @@ public class PresupuestosRepositoryImpl implements PresupuestosRepository {
 
     @Override
     @Transactional
-    public Presupuestos updatePresupuesto(Presupuestos p) {
+    public Presupuestos upLocalDatePresupuesto(Presupuestos p) {
         return em.merge(p);
     }
 }

@@ -13,6 +13,7 @@ public class Producto
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id_producto")
     private Integer id_producto;
 
     @Column(name = "nombre",length = 150,nullable = false)

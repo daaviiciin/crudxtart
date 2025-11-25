@@ -23,7 +23,7 @@ public class Roles_empleadoRepositoryImpl implements Roles_empleadoRepository {
     }
 
     @Override
-    public Roles_empleado findRolById(int id) {
+    public Roles_empleado findRolById(Integer id) {
         Roles_empleado r = em.find(Roles_empleado.class, id);
         return r;
     }
@@ -43,7 +43,7 @@ public class Roles_empleadoRepositoryImpl implements Roles_empleadoRepository {
 
     @Override
     @Transactional
-    public void deletebyid(int id) {
+    public void deletebyid(Integer id) {
         Roles_empleado r = em.find(Roles_empleado.class, id);
         if (r != null) {
             em.remove(r);
@@ -53,7 +53,7 @@ public class Roles_empleadoRepositoryImpl implements Roles_empleadoRepository {
 
     @Override
     @Transactional
-    public Roles_empleado updateRol(Roles_empleado r) {
+    public Roles_empleado upLocalDateRol(Roles_empleado r) {
         return em.merge(r);
     }
 }

@@ -8,13 +8,13 @@ public interface FacturaRepository {
 
     public List<Factura> findAllFacturas();
 
-    public Factura findFacturaById(int id);
+    public Factura findFacturaById(Integer id);
 
     public void saveFactura(Factura f);
 
-    public void deletebyid(int id);
+    public void deletebyid(Integer id);
 
-    public Factura updateFactura(Factura f);
+    public Factura upLocalDateFactura(Factura f);
 
     public Factura createFactura(Factura f);
 }

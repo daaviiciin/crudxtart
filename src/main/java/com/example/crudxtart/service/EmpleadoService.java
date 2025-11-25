@@ -26,9 +26,9 @@ public class EmpleadoService {
         return empleadoRepository.createEmpleado(e);
     }
 
-    public Empleado updateEmpleado(Empleado e) {
+    public Empleado upLocalDateEmpleado(Empleado e) {
         validarEmpleado(e);
-        return empleadoRepository.updateEmpleado(e);
+        return empleadoRepository.upLocalDateEmpleado(e);
     }
 
     public void deleteEmpleado(int id) {

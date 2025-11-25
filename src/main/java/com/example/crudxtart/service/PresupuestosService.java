@@ -26,9 +26,9 @@ public class PresupuestosService {
         return presupuestosRepository.createPresupuesto(p);
     }
 
-    public Presupuestos updatePresupuesto(Presupuestos p) {
+    public Presupuestos upLocalDatePresupuesto(Presupuestos p) {
         validarPresupuesto(p);
-        return presupuestosRepository.updatePresupuesto(p);
+        return presupuestosRepository.upLocalDatePresupuesto(p);
     }
 
     public void deletePresupuesto(int id) {

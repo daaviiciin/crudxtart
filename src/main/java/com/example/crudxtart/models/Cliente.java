@@ -3,8 +3,8 @@ package com.example.crudxtart.models;
 
 import jakarta.persistence.*;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 @Entity
@@ -14,6 +14,7 @@ public class Cliente
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id_cliente")
     private Integer id_cliente;
 
     @Column(name = "nombre", length = 150, nullable = false)
@@ -25,11 +26,14 @@ public class Cliente
     @Column(name = "telefono",length = 20)
     private String telefono;
 
+    @Column(name = "password",nullable = false,length = 150)
+    private String password;
+
     @Column(name = "tipo_cliente",length = 50)
     private String tipo_cliente;
 
     @Column(name = "fecha_alta")
-    private Date fecha_alta;
+    private LocalDate fecha_alta;
 
     @OneToMany(mappedBy = "cliente_pagador",cascade = CascadeType.ALL,orphanRemoval = true)
     List<Factura> facturas=new ArrayList<>();
@@ -42,7 +46,7 @@ public class Cliente
     public Cliente()
     {}
 
-    public Cliente(String nombre, Integer id_cliente, String email, String telefono, String tipo_cliente, Date fecha_alta) {
+    public Cliente(String nombre, Integer id_cliente, String email, String telefono, String tipo_cliente, LocalDate fecha_alta) {
         this.nombre = nombre;
         this.id_cliente = id_cliente;
         this.email = email;
@@ -91,11 +95,19 @@ public class Cliente
         this.tipo_cliente = tipo_cliente;
     }
 
-    public Date getFecha_alta() {
+    public LocalDate getFecha_alta() {
         return fecha_alta;
     }
 
-    public void setFecha_alta(Date fecha_alta) {
+    public void setFecha_alta(LocalDate fecha_alta) {
         this.fecha_alta = fecha_alta;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
     }
 }

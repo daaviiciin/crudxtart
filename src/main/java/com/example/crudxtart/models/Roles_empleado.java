@@ -8,7 +8,7 @@ import jakarta.persistence.*;
 public class Roles_empleado
 {
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_rol")
     private Integer id_rol;
 
@@ -26,7 +26,7 @@ public class Roles_empleado
 
     }
 
-    public int getId_rol()
+    public Integer getId_rol()
     {
         return id_rol;
     }

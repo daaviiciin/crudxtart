@@ -22,7 +22,7 @@ public class FacturaRepositoryImpl implements FacturaRepository {
     }
 
     @Override
-    public Factura findFacturaById(int id) {
+    public Factura findFacturaById(Integer id) {
         Factura f = em.find(Factura.class, id);
         return f;
     }
@@ -42,7 +42,7 @@ public class FacturaRepositoryImpl implements FacturaRepository {
 
     @Override
     @Transactional
-    public void deletebyid(int id) {
+    public void deletebyid(Integer id) {
         Factura f = em.find(Factura.class, id);
         if (f != null) {
             em.remove(f);
@@ -52,7 +52,7 @@ public class FacturaRepositoryImpl implements FacturaRepository {
 
     @Override
     @Transactional
-    public Factura updateFactura(Factura f) {
+    public Factura upLocalDateFactura(Factura f) {
         return em.merge(f);
     }
 }

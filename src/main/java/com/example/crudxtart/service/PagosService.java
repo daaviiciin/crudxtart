@@ -4,9 +4,11 @@ import com.example.crudxtart.models.Pagos;
 import com.example.crudxtart.repository.PagosRepository;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import jakarta.transaction.Transactional;
 
-import java.util.Date;
+import java.time.LocalDate;
 import java.util.List;
+
 @ApplicationScoped
 public class PagosService
 {
@@ -23,16 +25,17 @@ public class PagosService
         return pagosRepository.findPagosById(id);
     }
 
+
     public Pagos createPagos(Pagos p)
     {
         validarpagos(p);
         return  pagosRepository.createPagos(p);
     }
 
-    public Pagos updatePagos(Pagos p)
+    public Pagos upLocalDatePagos(Pagos p)
     {
         validarpagos(p);
-        return  pagosRepository.updatePagos(p);
+        return  pagosRepository.upLocalDatePagos(p);
     }
 
     public void deletePagos(int id)
@@ -64,8 +67,8 @@ public class PagosService
             }
         }
 
-        Date hoy = new Date();
-        if (pago.getFecha_pago() != null && pago.getFecha_pago().after(hoy)) { //antes era null && !hoy.before(pago.getFecha_pago())) {
+        LocalDate hoy = LocalDate.now();
+        if (pago.getFecha_pago().isAfter(hoy)) {
             throw new IllegalArgumentException("La fecha de pago no puede ser futura.");
         }
     }

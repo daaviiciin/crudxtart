@@ -15,9 +15,27 @@ public class ClienteTest {
 
     public ClienteTest() {}
 
-    public void testClienteRepository() {
-        List<Cliente> lista = clienteService.findAllClientes();
-        lista.forEach(c -> {
+    public void testClienteRepository()
+    {
+
+
+        Cliente nuevo = new Cliente();
+        nuevo.setNombre("Cliente Prueba");
+        nuevo.setEmail("cliente.prueba" + System.currentTimeMillis() + "@example.com");
+        nuevo.setTelefono("699999999");
+        nuevo.setTipo_cliente("persona");
+        nuevo.setPassword("1234");
+        nuevo.setFecha_alta(new Date());
+
+        Cliente creado = clienteRepository.createCliente(nuevo);
+
+        System.out.println("==== NUEVO CLIENTE CREADO ====");
+        System.out.println("Nuevo ID: " + creado.getId_cliente());
+
+        // 3. Lista después de insertar
+        System.out.println("==== LISTA DE CLIENTES DESPUÉS DE INSERTAR ====");
+        List<Cliente> listaFinal = clienteRepository.findAllClientes();
+        listaFinal.forEach(c -> {
             System.out.println(
                     "ID: " + c.getId_cliente() +
                             " | Nombre: " + c.getNombre() +
@@ -25,10 +43,9 @@ public class ClienteTest {
                             " | Teléfono: " + c.getTelefono() +
                             " | Tipo: " + c.getTipo_cliente() +
                             " | Fecha alta: " + c.getFecha_alta()
-            );
-        });
 
-        Cliente cliente = new Cliente();
-    }
+
+
+        }
 }
 

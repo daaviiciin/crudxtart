@@ -11,6 +11,7 @@ public class FacturaProducto
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id_factura_producto")
     private Integer id_factura_producto;
 
     @ManyToOne(fetch = FetchType.LAZY)

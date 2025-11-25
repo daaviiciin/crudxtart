@@ -26,9 +26,9 @@ public class ProductoService {
         return productoRepository.createProducto(p);
     }
 
-    public Producto updateProducto(Producto p) {
+    public Producto upLocalDateProducto(Producto p) {
         validarProducto(p);
-        return productoRepository.updateProducto(p);
+        return productoRepository.upLocalDateProducto(p);
     }
 
     public void deleteProducto(int id) {

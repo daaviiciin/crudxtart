@@ -26,9 +26,9 @@ public class ClienteService {
         return clienteRepository.createCliente(c);
     }
 
-    public Cliente updateCliente(Cliente c) {
+    public Cliente upLocalDateCliente(Cliente c) {
         validarCliente(c);
-        return clienteRepository.updateCliente(c);
+        return clienteRepository.upLocalDateCliente(c);
     }
 
     public void deleteCliente(int id) {

@@ -26,9 +26,9 @@ public class Roles_empleadoService {
         return roles_empleadoRepository.createRol(r);
     }
 
-    public Roles_empleado updateRol(Roles_empleado r) {
+    public Roles_empleado upLocalDateRol(Roles_empleado r) {
         validarRol(r);
-        return roles_empleadoRepository.updateRol(r);
+        return roles_empleadoRepository.upLocalDateRol(r);
     }
 
     public void deleteRol(int id) {

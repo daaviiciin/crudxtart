@@ -3,16 +3,16 @@ package com.example.crudxtart.models;
 
 import jakarta.persistence.*;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 @Entity
-@Table(name = "factura")
+@Table(name = "facturas")
 public class Factura
 {
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_factura")
     private Integer id_factura;
 
@@ -28,7 +28,7 @@ public class Factura
     private Empleado empleado;
 
     @Column(name = "fecha_emision", nullable = false)
-    private Date fecha_emision;
+    private LocalDate fecha_emision;
 
     @Column(name = "total",nullable = false)
     private double total;
@@ -50,7 +50,7 @@ public class Factura
 
     }
 
-    public Factura(int id_factura, String num_factura, Date fecha_emision, double total, String estado) {
+    public Factura(int id_factura, String num_factura, LocalDate fecha_emision, double total, String estado) {
         this.id_factura = id_factura;
         this.num_factura = num_factura;
         this.fecha_emision = fecha_emision;
@@ -90,11 +90,11 @@ public class Factura
         this.empleado = empleado;
     }
 
-    public Date getFecha_emision() {
+    public LocalDate getFecha_emision() {
         return fecha_emision;
     }
 
-    public void setFecha_emision(Date fecha_emision) {
+    public void setFecha_emision(LocalDate fecha_emision) {
         this.fecha_emision = fecha_emision;
     }
 
@@ -102,7 +102,17 @@ public class Factura
         return total;
     }
 
-
+    public void setTotal(double total) {
+        this.total = total;
     }
+
+    public String getEstado() {
+        return estado;
+    }
+
+    public void setEstado(String estado) {
+        this.estado = estado;
+    }
+}
 
 

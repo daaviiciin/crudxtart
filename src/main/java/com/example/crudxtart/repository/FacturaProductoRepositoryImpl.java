@@ -23,7 +23,7 @@ public class FacturaProductoRepositoryImpl implements FacturaProductoRepository 
     }
 
     @Override
-    public FacturaProducto findFacturaProductoById(int id) {
+    public FacturaProducto findFacturaProductoById(Integer id) {
         FacturaProducto fp = em.find(FacturaProducto.class, id);
         return fp;
     }
@@ -43,7 +43,7 @@ public class FacturaProductoRepositoryImpl implements FacturaProductoRepository 
 
     @Override
     @Transactional
-    public void deletebyid(int id) {
+    public void deletebyid(Integer id) {
         FacturaProducto fp = em.find(FacturaProducto.class, id);
         if (fp != null) {
             em.remove(fp);
@@ -53,7 +53,7 @@ public class FacturaProductoRepositoryImpl implements FacturaProductoRepository 
 
     @Override
     @Transactional
-    public FacturaProducto updateFacturaProducto(FacturaProducto fp) {
+    public FacturaProducto upLocalDateFacturaProducto(FacturaProducto fp) {
         return em.merge(fp);
     }
 }

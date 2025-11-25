@@ -3,7 +3,7 @@ package com.example.crudxtart.models;
 import jakarta.persistence.*;
 import jakarta.persistence.criteria.CriteriaBuilder;
 
-import java.util.Date;
+import java.time.LocalDate;
 import java.util.Objects;
 
 @Entity
@@ -11,16 +11,16 @@ import java.util.Objects;
 public class Pagos
 {
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_pago")
     private Integer id_pago;
 
-    @ManyToOne (fetch = FetchType.LAZY)
+    @ManyToOne (fetch = FetchType.EAGER)
     @JoinColumn (name = "id_factura", nullable = false)
     private Factura factura;
 
     @Column (name = "fecha_pago", nullable=false)
-    private Date fecha_pago;
+    private LocalDate fecha_pago;
 
     @Column (name = "importe")
     private double importe;
@@ -36,7 +36,7 @@ public class Pagos
 
     }
 
-    public Pagos(Factura factura, Date fecha_pago, double importe, String metodo_pago, String estado)
+    public Pagos(Factura factura, LocalDate fecha_pago, double importe, String metodo_pago, String estado)
     {
         this.factura = factura;
         this.fecha_pago = fecha_pago;
@@ -54,11 +54,11 @@ public class Pagos
         this.id_pago = id_pago;
     }
 
-    public Date getFecha_pago() {
+    public LocalDate getFecha_pago() {
         return fecha_pago;
     }
 
-    public void setFecha_pago(Date fecha_pago) {
+    public void setFecha_pago(LocalDate fecha_pago) {
         this.fecha_pago = fecha_pago;
     }
 

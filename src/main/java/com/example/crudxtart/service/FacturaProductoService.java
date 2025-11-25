@@ -26,9 +26,9 @@ public class FacturaProductoService {
         return facturaProductoRepository.createFacturaProducto(fp);
     }
 
-    public FacturaProducto updateFacturaProducto(FacturaProducto fp) {
+    public FacturaProducto upLocalDateFacturaProducto(FacturaProducto fp) {
         validarFacturaProducto(fp);
-        return facturaProductoRepository.updateFacturaProducto(fp);
+        return facturaProductoRepository.upLocalDateFacturaProducto(fp);
     }
 
     public void deleteFacturaProducto(int id) {

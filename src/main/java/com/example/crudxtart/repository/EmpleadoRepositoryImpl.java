@@ -22,7 +22,7 @@ public class EmpleadoRepositoryImpl implements EmpleadoRepository {
     }
 
     @Override
-    public Empleado findEmpleadoById(int id) {
+    public Empleado findEmpleadoById(Integer id) {
         Empleado e = em.find(Empleado.class, id);
         return e;
     }
@@ -42,7 +42,7 @@ public class EmpleadoRepositoryImpl implements EmpleadoRepository {
 
     @Override
     @Transactional
-    public void deletebyid(int id) {
+    public void deletebyid(Integer id) {
         Empleado e = em.find(Empleado.class, id);
         if (e != null) {
             em.remove(e);
@@ -52,7 +52,7 @@ public class EmpleadoRepositoryImpl implements EmpleadoRepository {
 
     @Override
     @Transactional
-    public Empleado updateEmpleado(Empleado e) {
+    public Empleado upLocalDateEmpleado(Empleado e) {
         return em.merge(e);
     }
 }

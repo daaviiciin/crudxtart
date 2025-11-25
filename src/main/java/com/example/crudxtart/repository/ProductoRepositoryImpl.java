@@ -23,7 +23,7 @@ public class ProductoRepositoryImpl implements ProductoRepository {
     }
 
     @Override
-    public Producto findProductoById(int id) {
+    public Producto findProductoById(Integer id) {
         Producto p = em.find(Producto.class, id);
         return p;
     }
@@ -43,7 +43,7 @@ public class ProductoRepositoryImpl implements ProductoRepository {
 
     @Override
     @Transactional
-    public void deletebyid(int id) {
+    public void deletebyid(Integer id) {
         Producto p = em.find(Producto.class, id);
         if (p != null) {
             em.remove(p);
@@ -53,7 +53,7 @@ public class ProductoRepositoryImpl implements ProductoRepository {
 
     @Override
     @Transactional
-    public Producto updateProducto(Producto p) {
+    public Producto upLocalDateProducto(Producto p) {
         return em.merge(p);
     }
 }

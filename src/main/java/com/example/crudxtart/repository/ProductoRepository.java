@@ -8,13 +8,13 @@ public interface ProductoRepository {
 
     public List<Producto> findAllProductos();
 
-    public Producto findProductoById(int id);
+    public Producto findProductoById(Integer id);
 
     public void saveProducto(Producto p);
 
-    public void deletebyid(int id);
+    public void deletebyid(Integer id);
 
-    public Producto updateProducto(Producto p);
+    public Producto upLocalDateProducto(Producto p);
 
     public Producto createProducto(Producto p);
 }

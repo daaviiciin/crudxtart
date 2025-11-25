@@ -10,6 +10,7 @@ public class Presupuestos
 {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id_presupuesto")
     private Integer id_Presupuesto;
 
     @ManyToOne(fetch = FetchType.LAZY)
