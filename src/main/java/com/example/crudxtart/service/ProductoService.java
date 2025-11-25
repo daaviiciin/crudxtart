@@ -17,7 +17,7 @@ public class ProductoService {
         return productoRepository.findAllProductos();
     }
 
-    public Producto findProductoById(int id) {
+    public Producto findProductoById(Integer id) {
         return productoRepository.findProductoById(id);
     }
 
@@ -26,12 +26,12 @@ public class ProductoService {
         return productoRepository.createProducto(p);
     }
 
-    public Producto upLocalDateProducto(Producto p) {
+    public Producto updateProducto(Producto p) {
         validarProducto(p);
-        return productoRepository.upLocalDateProducto(p);
+        return productoRepository.updateProducto(p);
     }
 
-    public void deleteProducto(int id) {
+    public void deleteProducto(Integer id) {
         productoRepository.deletebyid(id);
     }
 

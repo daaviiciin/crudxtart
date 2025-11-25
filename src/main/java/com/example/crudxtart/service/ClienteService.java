@@ -17,7 +17,7 @@ public class ClienteService {
         return clienteRepository.findAllClientes();
     }
 
-    public Cliente findClienteById(int id) {
+    public Cliente findClienteById(Integer id) {
         return clienteRepository.findClienteById(id);
     }
 
@@ -31,7 +31,7 @@ public class ClienteService {
         return clienteRepository.upLocalDateCliente(c);
     }
 
-    public void deleteCliente(int id) {
+    public void deleteCliente(Integer id) {
         clienteRepository.deletebyid(id);
     }
 

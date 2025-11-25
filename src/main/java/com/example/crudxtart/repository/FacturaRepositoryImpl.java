@@ -22,37 +22,84 @@ public class FacturaRepositoryImpl implements FacturaRepository {
     }
 
     @Override
-    public Factura findFacturaById(Integer id) {
-        Factura f = em.find(Factura.class, id);
-        return f;
+    public Factura findFacturaById(Integer id)
+    {
+       try
+       {
+           em.getTransaction().begin();
+           Factura f = em.find(Factura.class, id);
+           em.getTransaction().commit();
+           return f;
+       }catch(Exception ex)
+       {
+           em.getTransaction().rollback();
+       }
+       return null;
     }
 
     @Override
-    @Transactional
-    public Factura createFactura(Factura f) {
-        em.persist(f);
-        return f;
-    }
 
-    @Override
-    @Transactional
-    public void saveFactura(Factura f) {
-        em.merge(f);
-    }
-
-    @Override
-    @Transactional
-    public void deletebyid(Integer id) {
-        Factura f = em.find(Factura.class, id);
-        if (f != null) {
-            em.remove(f);
+    public Factura createFactura(Factura f)
+    {
+        try
+        {
+            em.getTransaction().begin();
+            em.persist(f);
+            em.getTransaction().commit();
+            return f;
+        }catch(Exception ex)
+        {
+            em.getTransaction().rollback();
         }
-        return;
+        return null;
     }
 
     @Override
-    @Transactional
-    public Factura upLocalDateFactura(Factura f) {
-        return em.merge(f);
+
+    public void saveFactura(Factura f)
+    {
+        try
+        {
+            em.getTransaction().begin();
+            em.persist(f);
+            em.getTransaction().commit();
+        }catch (Exception ex)
+        {
+            em.getTransaction().rollback();
+        }
+    }
+
+    @Override
+    public void deletebyid(Integer id) {
+
+        try
+        {
+            em.getTransaction().begin();
+            Factura f = em.find(Factura.class, id);
+            if (f != null) {
+                em.remove(f);
+            }
+            em.getTransaction().commit();
+
+        }catch (Exception ex)
+        {
+            em.getTransaction().rollback();
+        }
+    }
+
+    @Override
+    public Factura updateFactura(Factura f)
+    {
+        try
+        {
+            em.getTransaction().begin();
+            em.merge(f);
+            em.getTransaction().commit();
+            return f;
+        }catch(Exception ex)
+        {
+            em.getTransaction().rollback();
+        }
+        return null;
     }
 }

@@ -1,5 +1,6 @@
 package com.example.crudxtart.test;
 
+import com.example.crudxtart.models.Presupuestos;
 import com.example.crudxtart.models.Producto;
 import com.example.crudxtart.service.ProductoService;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -16,16 +17,8 @@ public class ProductoTest {
     public ProductoTest() {}
 
     public void testProductoRepository() {
-        List<Producto> lista = productoService.findAllProductos();
-        lista.forEach(p -> {
-            System.out.println(
-                    "ID: " + p.getId_producto() +
-                            " | Nombre: " + p.getNombre() +
-                            " | Descripción: " + p.getDescripcion() +
-                            " | Categoría: " + p.getCategoria() +
-                            " | Precio: " + p.getPrecio() +
-                            " | Activo: " + p.isActivo()
-            );
-        });
+
+        productoService.deleteProducto(8);
+
     }
 }

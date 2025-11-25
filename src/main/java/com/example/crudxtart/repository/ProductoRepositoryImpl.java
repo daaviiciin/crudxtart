@@ -23,37 +23,87 @@ public class ProductoRepositoryImpl implements ProductoRepository {
     }
 
     @Override
-    public Producto findProductoById(Integer id) {
-        Producto p = em.find(Producto.class, id);
-        return p;
-    }
+    public Producto findProductoById(Integer id)
+    {
+        try
+        {
+            em.getTransaction().begin();
+            Producto p = em.find(Producto.class, id);
+            em.getTransaction().commit();
+            return p;
 
-    @Override
-    @Transactional
-    public Producto createProducto(Producto p) {
-        em.persist(p);
-        return p;
-    }
-
-    @Override
-    @Transactional
-    public void saveProducto(Producto p) {
-        em.merge(p);
-    }
-
-    @Override
-    @Transactional
-    public void deletebyid(Integer id) {
-        Producto p = em.find(Producto.class, id);
-        if (p != null) {
-            em.remove(p);
+        }catch (Exception ex)
+        {
+            em.getTransaction().rollback();
         }
-        return;
+        return null;
     }
 
     @Override
-    @Transactional
-    public Producto upLocalDateProducto(Producto p) {
-        return em.merge(p);
+    public Producto createProducto(Producto p)
+    {
+        try
+        {
+            em.getTransaction().begin();
+            em.persist(p);
+            em.getTransaction().commit();
+            return p;
+        }catch (Exception ex)
+        {
+            em.getTransaction().rollback();
+        }
+        return null;
     }
+
+    @Override
+    public void saveProducto(Producto p)
+    {
+        try
+        {
+            em.getTransaction().begin();
+            em.persist(p);
+            em.getTransaction().commit();
+        }catch (Exception ex)
+        {
+            em.getTransaction().rollback();
+        }
+
+    }
+
+    @Override
+    public void deletebyid(Integer id)
+    {
+        try
+        {
+            em.getTransaction().begin();
+            Producto p = em.find(Producto.class, id);
+            if (p != null) {
+                em.remove(p);
+            }
+            em.getTransaction().commit();
+        }catch (Exception ex)
+        {
+            em.getTransaction().rollback();
+        }
+
+
+    }
+
+    @Override
+    public Producto updateProducto(Producto p)
+    {
+        try
+        {
+            em.getTransaction().begin();
+            em.merge(p);
+            em.getTransaction().commit();
+            return p;
+        }catch (Exception ex)
+        {
+            em.getTransaction().rollback();
+        }
+        return null;
+    }
+
+
 }

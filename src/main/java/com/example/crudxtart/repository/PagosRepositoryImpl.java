@@ -50,7 +50,7 @@ public class PagosRepositoryImpl implements PagosRepository
     {
         try {
             em.getTransaction().begin();
-            em.merge(p);
+            em.persist(p);
             em.getTransaction().commit();
         }catch (Exception ex)
         {

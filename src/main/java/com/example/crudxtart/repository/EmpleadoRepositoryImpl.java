@@ -23,37 +23,85 @@ public class EmpleadoRepositoryImpl implements EmpleadoRepository {
     }
 
     @Override
-    public Empleado findEmpleadoById(Integer id) {
-        Empleado e = em.find(Empleado.class, id);
-        return e;
+    public Empleado findEmpleadoById(Integer id)
+    {
+       try {
+           em.getTransaction().begin();
+           Empleado e = em.find(Empleado.class, id);
+           em.getTransaction().commit();
+           return e;
+       }catch (Exception ex)
+       {
+           em.getTransaction().rollback();
+       }
+       return null;
     }
 
     @Override
     @Transactional
-    public Empleado createEmpleado(Empleado e) {
-        em.persist(e);
-        return e;
+    public Empleado createEmpleado(Empleado e)
+    {
+       try {
+           em.getTransaction().begin();
+           em.persist(e);
+           em.getTransaction().commit();
+           return e;
+       }catch (Exception ex)
+       {
+           em.getTransaction().rollback();
+       }
+       return null;
     }
 
     @Override
     @Transactional
     public void saveEmpleado(Empleado e) {
-        em.merge(e);
+       try
+       {
+           em.getTransaction().begin();
+           em.persist(e);
+           em.getTransaction().commit();
+       }catch (Exception ex)
+       {
+           em.getTransaction().rollback();
+       }
+
     }
 
     @Override
     @Transactional
     public void deletebyid(Integer id) {
-        Empleado e = em.find(Empleado.class, id);
-        if (e != null) {
-            em.remove(e);
+        try {
+
+            Empleado e = em.find(Empleado.class, id);
+            if (e != null)
+            {
+                em.getTransaction().begin();
+                em.remove(e);
+                em.getTransaction().commit();
+            }
+        }catch (Exception ex)
+        {
+            em.getTransaction().rollback();
         }
-        return;
     }
 
     @Override
     @Transactional
-    public Empleado upLocalDateEmpleado(Empleado e) {
-        return em.merge(e);
+    public Empleado updateEmpleado(Empleado e)
+    {
+        try
+        {
+            em.getTransaction().begin();
+            em.merge(e);
+            em.getTransaction().commit();
+            return e;
+        }catch (Exception ex)
+        {
+            em.getTransaction().rollback();
+        }
+
+        return null;
+
     }
 }

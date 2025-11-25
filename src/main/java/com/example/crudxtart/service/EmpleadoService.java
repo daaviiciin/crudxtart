@@ -17,7 +17,7 @@ public class EmpleadoService {
         return empleadoRepository.findAllEmpleados();
     }
 
-    public Empleado findEmpleadoById(int id) {
+    public Empleado findEmpleadoById(Integer id) {
         return empleadoRepository.findEmpleadoById(id);
     }
 
@@ -28,10 +28,10 @@ public class EmpleadoService {
 
     public Empleado upLocalDateEmpleado(Empleado e) {
         validarEmpleado(e);
-        return empleadoRepository.upLocalDateEmpleado(e);
+        return empleadoRepository.updateEmpleado(e);
     }
 
-    public void deleteEmpleado(int id) {
+    public void deleteEmpleado(Integer id) {
         empleadoRepository.deletebyid(id);
     }
 

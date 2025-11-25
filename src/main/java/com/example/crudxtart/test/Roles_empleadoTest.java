@@ -16,12 +16,7 @@ public class Roles_empleadoTest {
     public Roles_empleadoTest() {}
 
     public void testRoles_empleadoRepository() {
-        List<Roles_empleado> lista = roles_empleadoService.findAllRoles_empleado();
-        lista.forEach(r -> {
-            System.out.println(
-                    "ID: " + r.getId_rol() +
-                            " | Nombre rol: " + r.getNombre_rol()
-            );
-        });
+
+        roles_empleadoService.deleteRol(7);
     }
 }

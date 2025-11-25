@@ -14,7 +14,7 @@ public interface PresupuestosRepository {
 
     public void deletebyid(Integer id);
 
-    public Presupuestos upLocalDatePresupuesto(Presupuestos p);
+    public Presupuestos updatePresupuesto(Presupuestos p);
 
     public Presupuestos createPresupuesto(Presupuestos p);
 }

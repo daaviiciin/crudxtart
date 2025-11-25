@@ -12,7 +12,7 @@ public class Roles_empleado
     @Column(name = "id_rol")
     private Integer id_rol;
 
-    @Column(name = "nombre_rol", length = 150, nullable = false, unique = true)
+    @Column(name = "nombre_rol", length = 150, nullable = false)
     private String nombre_rol;
 
     public Roles_empleado(int id_rol, String nombre_rol)

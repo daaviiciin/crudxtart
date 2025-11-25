@@ -14,7 +14,7 @@ public interface ProductoRepository {
 
     public void deletebyid(Integer id);
 
-    public Producto upLocalDateProducto(Producto p);
+    public Producto updateProducto(Producto p);
 
     public Producto createProducto(Producto p);
 }

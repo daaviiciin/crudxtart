@@ -20,7 +20,7 @@ public class PagosService
         return pagosRepository.findAllPagos();
     }
 
-    public Pagos findPagosById(int id)
+    public Pagos findPagosById(Integer id)
     {
         return pagosRepository.findPagosById(id);
     }

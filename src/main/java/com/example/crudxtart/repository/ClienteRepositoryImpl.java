@@ -20,7 +20,6 @@ public class ClienteRepositoryImpl implements ClienteRepository {
     public List<Cliente> findAllClientes()
     {
 
-
         return em.createQuery("SELECT c FROM Cliente c", Cliente.class).getResultList();
     }
 
@@ -34,6 +33,7 @@ public class ClienteRepositoryImpl implements ClienteRepository {
     }
 
     @Override
+    @Transactional
     public Cliente createCliente(Cliente c)
     {
         try
@@ -51,11 +51,22 @@ public class ClienteRepositoryImpl implements ClienteRepository {
     }
 
     @Override
+    @Transactional
     public void saveCliente(Cliente c) {
-        em.merge(c);
+
+        try
+        {
+            em.getTransaction().begin();
+            em.persist(c);
+            em.getTransaction().commit();
+        }catch (Exception ex)
+        {
+            em.getTransaction().rollback();
+        }
     }
 
     @Override
+    @Transactional
     public void deletebyid(Integer id) {
         try {
             Cliente c = em.find(Cliente.class, id);

@@ -15,7 +15,7 @@ public interface Roles_empleadoRepository {
 
     public void deletebyid(Integer id);
 
-    public Roles_empleado upLocalDateRol(Roles_empleado r);
+    public Roles_empleado updateRol(Roles_empleado r);
 
     public Roles_empleado createRol(Roles_empleado r);
 }

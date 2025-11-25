@@ -10,6 +10,6 @@ public interface EmpleadoRepository {
     public Empleado findEmpleadoById(Integer id);
     public void saveEmpleado(Empleado e);
     public void deletebyid(Integer id);
-    public Empleado upLocalDateEmpleado(Empleado e);
+    public Empleado updateEmpleado(Empleado e);
     public Empleado createEmpleado(Empleado e);
 }

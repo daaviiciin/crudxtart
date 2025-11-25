@@ -19,7 +19,7 @@ public class FacturaService {
         return facturaRepository.findAllFacturas();
     }
 
-    public Factura findFacturaById(int id) {
+    public Factura findFacturaById(Integer id) {
         return facturaRepository.findFacturaById(id);
     }
 
@@ -28,9 +28,9 @@ public class FacturaService {
         return facturaRepository.createFactura(f);
     }
 
-    public Factura upLocalDateFactura(Factura f) {
+    public Factura updateFactura(Factura f) {
         validarFactura(f);
-        return facturaRepository.upLocalDateFactura(f);
+        return facturaRepository.updateFactura(f);
     }
 
     public void deleteFactura(int id) {
@@ -57,7 +57,7 @@ public class FacturaService {
 
         if (factura.getEstado() != null) {
             String estado = factura.getEstado().toLowerCase();
-            if (!estado.equals("pendiente") && !estado.equals("pagada") && !estado.equals("cancelada")) {
+            if (!estado.equals("emitida") && !estado.equals("pagada") && !estado.equals("cancelada")) {
                 throw new IllegalArgumentException("Estado de factura inválido: " + factura.getEstado());
             }
         }

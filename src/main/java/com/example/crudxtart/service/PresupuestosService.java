@@ -17,7 +17,7 @@ public class PresupuestosService {
         return presupuestosRepository.findAllPresupuestos();
     }
 
-    public Presupuestos findPresupuestoById(int id) {
+    public Presupuestos findPresupuestoById(Integer id) {
         return presupuestosRepository.findPresupuestoById(id);
     }
 
@@ -26,12 +26,12 @@ public class PresupuestosService {
         return presupuestosRepository.createPresupuesto(p);
     }
 
-    public Presupuestos upLocalDatePresupuesto(Presupuestos p) {
+    public Presupuestos updatePresupuesto(Presupuestos p) {
         validarPresupuesto(p);
-        return presupuestosRepository.upLocalDatePresupuesto(p);
+        return presupuestosRepository.updatePresupuesto(p);
     }
 
-    public void deletePresupuesto(int id) {
+    public void deletePresupuesto(Integer id) {
         presupuestosRepository.deletebyid(id);
     }
 

@@ -29,8 +29,11 @@ public class FacturaProducto
     @Column(name = "cantidad")
     private int cantidad;
 
-    @Column (name = "orecio_unitario")
-    private double orecio_unitario;
+    @Column(name = "subtotal")
+    private double subtotal;
+
+    @Column (name = "precio_unitario")
+    private double precio_unitario;
 
     public FacturaProducto()
     {
@@ -41,7 +44,7 @@ public class FacturaProducto
     public FacturaProducto(int id_factura_producto, int cantidad, double orecio_unitario) {
         this.id_factura_producto = id_factura_producto;
         this.cantidad = cantidad;
-        this.orecio_unitario = orecio_unitario;
+        this.precio_unitario = orecio_unitario;
     }
 
     public int getId_factura_producto() {
@@ -60,11 +63,51 @@ public class FacturaProducto
         this.cantidad = cantidad;
     }
 
-    public double getOrecio_unitario() {
-        return orecio_unitario;
+    public double getprecio_unitario() {
+        return precio_unitario;
     }
 
-    public void setOrecio_unitario(double orecio_unitario) {
-        this.orecio_unitario = orecio_unitario;
+    public void setprecio_unitario(double precio_unitario) {
+        this.precio_unitario = precio_unitario;
+    }
+
+    public double getSubtotal() {
+        return subtotal;
+    }
+
+    public void setSubtotal(double subtotal) {
+        this.subtotal = subtotal;
+    }
+
+    public Factura getFactura() {
+        return factura;
+    }
+
+    public void setFactura(Factura factura) {
+        this.factura = factura;
+    }
+
+    public Producto getProducto() {
+        return Producto;
+    }
+
+    public void setProducto(Producto producto) {
+        Producto = producto;
+    }
+
+    public Cliente getCliente_beneficiario() {
+        return cliente_beneficiario;
+    }
+
+    public void setCliente_beneficiario(Cliente cliente_beneficiario) {
+        this.cliente_beneficiario = cliente_beneficiario;
+    }
+
+    public double getPrecio_unitario() {
+        return precio_unitario;
+    }
+
+    public void setPrecio_unitario(double precio_unitario) {
+        this.precio_unitario = precio_unitario;
     }
 }

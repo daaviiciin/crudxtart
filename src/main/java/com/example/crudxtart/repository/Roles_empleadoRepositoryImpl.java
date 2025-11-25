@@ -23,37 +23,84 @@ public class Roles_empleadoRepositoryImpl implements Roles_empleadoRepository {
     }
 
     @Override
-    public Roles_empleado findRolById(Integer id) {
-        Roles_empleado r = em.find(Roles_empleado.class, id);
-        return r;
-    }
-
-    @Override
-    @Transactional
-    public Roles_empleado createRol(Roles_empleado r) {
-        em.persist(r);
-        return r;
-    }
-
-    @Override
-    @Transactional
-    public void saveRol(Roles_empleado r) {
-        em.merge(r);
-    }
-
-    @Override
-    @Transactional
-    public void deletebyid(Integer id) {
-        Roles_empleado r = em.find(Roles_empleado.class, id);
-        if (r != null) {
-            em.remove(r);
+    public Roles_empleado findRolById(Integer id)
+    {
+        try
+        {
+            em.getTransaction().begin();
+            Roles_empleado r = em.find(Roles_empleado.class, id);
+            em.getTransaction().commit();
+            return r;
+        }catch (Exception ex)
+        {
+            em.getTransaction().rollback();
         }
-        return;
+        return null;
     }
 
     @Override
-    @Transactional
-    public Roles_empleado upLocalDateRol(Roles_empleado r) {
-        return em.merge(r);
+    public Roles_empleado createRol(Roles_empleado r)
+    {
+        try
+        {
+            em.getTransaction().begin();
+            em.persist(r);
+            em.getTransaction().commit();
+            return r;
+        }catch (Exception ex)
+        {
+            em.getTransaction().rollback();
+        }
+        return null;
+    }
+
+    @Override
+    public void saveRol(Roles_empleado r)
+    {
+        try
+        {
+            em.getTransaction().begin();
+            em.persist(r);
+            em.getTransaction().commit();
+        }catch (Exception ex)
+        {
+            em.getTransaction().rollback();
+        }
+
+    }
+
+    @Override
+    public void deletebyid(Integer id)
+    {
+        try
+        {
+            em.getTransaction().begin();
+            Roles_empleado r = em.find(Roles_empleado.class, id);
+            if (r != null) {
+                em.remove(r);
+            }
+            em.getTransaction().commit();
+        }catch (Exception ex)
+        {
+            em.getTransaction().rollback();
+        }
+
+    }
+
+    @Override
+
+    public Roles_empleado updateRol(Roles_empleado r)
+    {
+        try
+        {
+            em.getTransaction().begin();
+            em.merge(r);
+            em.getTransaction().commit();
+            return r;
+        }catch (Exception ex)
+        {
+            em.getTransaction().rollback();
+        }
+        return null;
     }
 }

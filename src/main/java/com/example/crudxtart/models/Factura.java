@@ -36,6 +36,9 @@ public class Factura
     @Column(name = "estado",nullable = false, length = 50)
     private String estado;
 
+    @Column(name = "notas",nullable = false, length = 150)
+    private String notas;
+
     @OneToMany(mappedBy = "factura",cascade = CascadeType.ALL,orphanRemoval = true)
     private List<Pagos> pagos = new ArrayList<>();
 
@@ -112,6 +115,14 @@ public class Factura
 
     public void setEstado(String estado) {
         this.estado = estado;
+    }
+
+    public String getNotas() {
+        return notas;
+    }
+
+    public void setNotas(String notas) {
+        this.notas = notas;
     }
 }
 

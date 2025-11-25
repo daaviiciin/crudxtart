@@ -14,7 +14,7 @@ public interface FacturaRepository {
 
     public void deletebyid(Integer id);
 
-    public Factura upLocalDateFactura(Factura f);
+    public Factura updateFactura(Factura f);
 
     public Factura createFactura(Factura f);
 }

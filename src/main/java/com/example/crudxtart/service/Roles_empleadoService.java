@@ -17,7 +17,7 @@ public class Roles_empleadoService {
         return roles_empleadoRepository.findAllRoles_empleado();
     }
 
-    public Roles_empleado findRolById(int id) {
+    public Roles_empleado findRolById(Integer id) {
         return roles_empleadoRepository.findRolById(id);
     }
 
@@ -26,12 +26,12 @@ public class Roles_empleadoService {
         return roles_empleadoRepository.createRol(r);
     }
 
-    public Roles_empleado upLocalDateRol(Roles_empleado r) {
+    public Roles_empleado updateRol(Roles_empleado r) {
         validarRol(r);
-        return roles_empleadoRepository.upLocalDateRol(r);
+        return roles_empleadoRepository.updateRol(r);
     }
 
-    public void deleteRol(int id) {
+    public void deleteRol(Integer id) {
         roles_empleadoRepository.deletebyid(id);
     }
 

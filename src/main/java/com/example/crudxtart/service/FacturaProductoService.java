@@ -17,7 +17,7 @@ public class FacturaProductoService {
         return facturaProductoRepository.findAllFacturaProductos();
     }
 
-    public FacturaProducto findFacturaProductoById(int id) {
+    public FacturaProducto findFacturaProductoById(Integer id) {
         return facturaProductoRepository.findFacturaProductoById(id);
     }
 
@@ -28,10 +28,10 @@ public class FacturaProductoService {
 
     public FacturaProducto upLocalDateFacturaProducto(FacturaProducto fp) {
         validarFacturaProducto(fp);
-        return facturaProductoRepository.upLocalDateFacturaProducto(fp);
+        return facturaProductoRepository.updateFacturaProducto(fp);
     }
 
-    public void deleteFacturaProducto(int id) {
+    public void deleteFacturaProducto(Integer id) {
         facturaProductoRepository.deletebyid(id);
     }
 
@@ -42,7 +42,7 @@ public class FacturaProductoService {
             throw new IllegalArgumentException("La cantidad debe ser mayor que 0.");
         }
 
-        if (fp.getOrecio_unitario() < 0) {
+        if (fp.getprecio_unitario() < 0) {
             throw new IllegalArgumentException("El precio unitario no puede ser negativo.");
         }
     }

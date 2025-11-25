@@ -23,37 +23,85 @@ public class FacturaProductoRepositoryImpl implements FacturaProductoRepository 
     }
 
     @Override
-    public FacturaProducto findFacturaProductoById(Integer id) {
-        FacturaProducto fp = em.find(FacturaProducto.class, id);
-        return fp;
-    }
-
-    @Override
-    @Transactional
-    public FacturaProducto createFacturaProducto(FacturaProducto fp) {
-        em.persist(fp);
-        return fp;
-    }
-
-    @Override
-    @Transactional
-    public void saveFacturaProducto(FacturaProducto fp) {
-        em.merge(fp);
-    }
-
-    @Override
-    @Transactional
-    public void deletebyid(Integer id) {
-        FacturaProducto fp = em.find(FacturaProducto.class, id);
-        if (fp != null) {
-            em.remove(fp);
+    public FacturaProducto findFacturaProductoById(Integer id)
+    {
+        try
+        {
+            em.getTransaction().begin();
+            FacturaProducto fp = em.find(FacturaProducto.class, id);
+            em.getTransaction().commit();
+            return fp;
         }
-        return;
+        catch(Exception ex)
+        {
+            em.getTransaction().rollback();
+        }
+        return null;
     }
 
     @Override
-    @Transactional
-    public FacturaProducto upLocalDateFacturaProducto(FacturaProducto fp) {
-        return em.merge(fp);
+
+    public FacturaProducto createFacturaProducto(FacturaProducto fp)
+    {
+        try
+        {
+            em.getTransaction().begin();
+            em.persist(fp);
+            em.getTransaction().commit();
+            return fp;
+        }catch(Exception ex)
+        {
+            em.getTransaction().rollback();
+        }
+        return null;
+    }
+
+    @Override
+    public void saveFacturaProducto(FacturaProducto fp)
+    {
+        try
+        {
+            em.getTransaction().begin();
+            em.persist(fp);
+            em.getTransaction().commit();
+        }catch(Exception ex)
+        {
+            em.getTransaction().rollback();
+        }
+    }
+
+    @Override
+
+    public void deletebyid(Integer id) {
+       try
+       {
+           em.getTransaction().begin();
+           FacturaProducto fp = em.find(FacturaProducto.class, id);
+           if (fp != null) {
+               em.remove(fp);
+           }
+           em.getTransaction().commit();
+       }catch(Exception ex)
+       {
+           em.getTransaction().rollback();
+       }
+
+    }
+
+    @Override
+
+    public FacturaProducto updateFacturaProducto(FacturaProducto fp)
+    {
+        try
+        {
+            em.getTransaction().begin();
+            em.merge(fp);
+            em.getTransaction().commit();
+            return fp;
+        }catch (Exception ex)
+        {
+            em.getTransaction().rollback();
+        }
+        return null;
     }
 }

@@ -3,6 +3,8 @@ package com.example.crudxtart.models;
 
 import jakarta.persistence.*;
 
+import java.time.LocalDate;
+
 @Entity
 @Table (name = "empleados")
 public class Empleado
@@ -23,6 +25,12 @@ public class Empleado
 
     @Column (name = "password",nullable = false,length = 150)
     private String password;
+
+    @Column(name = "fecha_ingreso",nullable = false)
+    private LocalDate fecha_ingreso;
+
+    @Column(name = "estado",nullable = false,length = 150)
+    private String estado;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_rol")
@@ -85,5 +93,21 @@ public class Empleado
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public LocalDate getFecha_ingreso() {
+        return fecha_ingreso;
+    }
+
+    public void setFecha_ingreso(LocalDate fecha_ingreso) {
+        this.fecha_ingreso = fecha_ingreso;
+    }
+
+    public String getEstado() {
+        return estado;
+    }
+
+    public void setEstado(String estado) {
+        this.estado = estado;
     }
 }
