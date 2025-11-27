@@ -61,7 +61,7 @@ public class Factura
         this.estado = estado;
     }
 
-    public int getId_factura() {
+    public Integer getId_factura() {
         return id_factura;
     }
 
