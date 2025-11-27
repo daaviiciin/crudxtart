@@ -52,7 +52,7 @@ public class Presupuestos
         this.estado = estado;
     }
 
-    public int getId_Presupuesto() {
+    public Integer getId_Presupuesto() {
         return id_Presupuesto;
     }
 

@@ -46,7 +46,7 @@ public class Producto
         this.activo = activo;
     }
 
-    public int getId_producto() {
+    public Integer getId_producto() {
         return id_producto;
     }
 

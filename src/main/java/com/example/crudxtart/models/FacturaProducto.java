@@ -47,7 +47,7 @@ public class FacturaProducto
         this.precio_unitario = orecio_unitario;
     }
 
-    public int getId_factura_producto() {
+    public Integer getId_factura_producto() {
         return id_factura_producto;
     }
 
