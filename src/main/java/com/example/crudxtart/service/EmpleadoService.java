@@ -21,6 +21,10 @@ public class EmpleadoService {
         return empleadoRepository.findEmpleadoById(id);
     }
 
+    public Empleado findEmpleadoByEmail(String email) {
+        return empleadoRepository.findEmpleadoByEmail(email);
+    }
+
     public Empleado createEmpleado(Empleado e) {
         validarEmpleado(e);
         return empleadoRepository.createEmpleado(e);

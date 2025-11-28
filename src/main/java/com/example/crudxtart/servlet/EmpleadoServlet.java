@@ -3,6 +3,7 @@ package com.example.crudxtart.servlet;
 import com.example.crudxtart.models.Empleado;
 import com.example.crudxtart.models.Roles_empleado;
 import com.example.crudxtart.service.EmpleadoService;
+import com.example.crudxtart.utils.JsonUtil;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import jakarta.inject.Inject;
@@ -23,9 +24,7 @@ public class EmpleadoServlet extends HttpServlet {
     @Inject
     private EmpleadoService empleadoService;
 
-    private final Gson gson = new GsonBuilder()
-            .setDateFormat("yyyy-MM-dd")
-            .create();
+    private final Gson gson = JsonUtil.gson;
 
     // ============================================================
     // GET (todos o por id)
@@ -168,17 +167,30 @@ public class EmpleadoServlet extends HttpServlet {
         return sb.toString();
     }
 
-    private Object success(Object data) {
-        return new Object() {
-            final boolean success = true;
-            final Object dataObj = data;
-        };
+    private Object success(Object dataObj) {
+        return new ResponseWrapper(true, dataObj);
     }
 
-    private Object error(String message) {
-        return new Object() {
-            final boolean success = false;
-            final String error = message;
-        };
+    private Object error(String msg) {
+        return new ResponseWrapper(false, new ErrorWrapper(msg));
     }
+
+    private static class ResponseWrapper {
+        final boolean success;
+        final Object data;
+
+        ResponseWrapper(boolean success, Object data) {
+            this.success = success;
+            this.data = data;
+        }
+    }
+
+    private static class ErrorWrapper {
+        final String error;
+
+        ErrorWrapper(String error) {
+            this.error = error;
+        }
+    }
+
 }

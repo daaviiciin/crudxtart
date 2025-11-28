@@ -2,6 +2,7 @@ package com.example.crudxtart.servlet;
 
 import com.example.crudxtart.models.Pagos;
 import com.example.crudxtart.service.PagosService;
+import com.example.crudxtart.utils.JsonUtil;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -22,9 +23,7 @@ public class PagosServlet extends HttpServlet {
     @Inject
     private PagosService pagosService;
 
-    private final Gson gson = new GsonBuilder()
-            .setDateFormat("yyyy-MM-dd")
-            .create();
+    private final Gson gson = JsonUtil.gson;
 
     // ============================================================
     // GET (todos o por id)

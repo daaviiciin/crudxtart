@@ -8,6 +8,7 @@ public interface EmpleadoRepository {
 
     public List<Empleado> findAllEmpleados();
     public Empleado findEmpleadoById(Integer id);
+    public Empleado findEmpleadoByEmail(String email);
     public void saveEmpleado(Empleado e);
     public void deletebyid(Integer id);
     public Empleado updateEmpleado(Empleado e);

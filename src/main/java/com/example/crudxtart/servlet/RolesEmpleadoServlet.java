@@ -2,6 +2,7 @@ package com.example.crudxtart.servlet;
 
 import com.example.crudxtart.models.Roles_empleado;
 import com.example.crudxtart.service.Roles_empleadoService;
+import com.example.crudxtart.utils.JsonUtil;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import jakarta.inject.Inject;
@@ -21,9 +22,7 @@ public class RolesEmpleadoServlet extends HttpServlet {
     @Inject
     private Roles_empleadoService rolesService;
 
-    private final Gson gson = new GsonBuilder()
-            .setDateFormat("yyyy-MM-dd")
-            .create();
+    private final Gson gson = JsonUtil.gson;
 
     // ============================================================
     // GET (todos o por id)

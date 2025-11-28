@@ -21,6 +21,10 @@ public class ClienteService {
         return clienteRepository.findClienteById(id);
     }
 
+    public Cliente findClienteByEmail(String email) {
+        return clienteRepository.findClienteByEmail(email);
+    }
+
     public Cliente createCliente(Cliente c) {
         validarCliente(c);
         return clienteRepository.createCliente(c);

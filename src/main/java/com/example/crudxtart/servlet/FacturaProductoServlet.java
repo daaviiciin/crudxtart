@@ -2,8 +2,8 @@ package com.example.crudxtart.servlet;
 
 import com.example.crudxtart.models.FacturaProducto;
 import com.example.crudxtart.service.FacturaProductoService;
+import com.example.crudxtart.utils.JsonUtil;
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import jakarta.inject.Inject;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -21,9 +21,7 @@ public class FacturaProductoServlet extends HttpServlet {
     @Inject
     private FacturaProductoService facturaProductoService;
 
-    private final Gson gson = new GsonBuilder()
-            .setDateFormat("yyyy-MM-dd")
-            .create();
+    private final Gson gson = JsonUtil.gson;
 
     // ============================================================
     // GET (todos o por id)

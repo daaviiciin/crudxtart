@@ -9,7 +9,7 @@ public interface ClienteRepository {
     public List<Cliente> findAllClientes();
 
     public Cliente findClienteById( Integer id);
-
+    public Cliente findClienteByEmail(String email);
     public void saveCliente(Cliente c);
 
     public void deletebyid(Integer id);

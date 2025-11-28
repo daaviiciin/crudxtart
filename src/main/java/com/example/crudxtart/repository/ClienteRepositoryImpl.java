@@ -33,6 +33,18 @@ public class ClienteRepositoryImpl implements ClienteRepository {
     }
 
     @Override
+    public Cliente findClienteByEmail(String email) {
+        try {
+            return em.createQuery(
+                            "SELECT c FROM Cliente c WHERE c.email = :email", Cliente.class)
+                    .setParameter("email", email)
+                    .getSingleResult();
+        } catch (Exception ex) {
+            return null;
+        }
+    }
+
+    @Override
     @Transactional
     public Cliente createCliente(Cliente c)
     {
