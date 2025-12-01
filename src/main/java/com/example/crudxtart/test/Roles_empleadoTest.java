@@ -1,11 +1,9 @@
 package com.example.crudxtart.test;
 
-import com.example.crudxtart.models.Roles_empleado;
 import com.example.crudxtart.service.Roles_empleadoService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
-import java.util.List;
 
 @ApplicationScoped
 public class Roles_empleadoTest {
