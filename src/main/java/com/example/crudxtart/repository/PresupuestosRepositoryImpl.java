@@ -4,6 +4,7 @@ import com.example.crudxtart.models.Presupuestos;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.NoResultException;
 import jakarta.transaction.Transactional;
 
 import java.util.List;
@@ -17,41 +18,58 @@ public class PresupuestosRepositoryImpl implements PresupuestosRepository {
     public PresupuestosRepositoryImpl() {}
 
     @Override
+    @Transactional
     public List<Presupuestos> findAllPresupuestos() {
-        return em.createQuery("SELECT p FROM Presupuestos p", Presupuestos.class)
-                .getResultList();
+        return em.createQuery(
+                "SELECT p FROM Presupuestos p " +
+                        "LEFT JOIN FETCH p.empleado " +
+                        "LEFT JOIN FETCH p.cliente_pagador " +
+                        "LEFT JOIN FETCH p.cliente_beneficiario " +
+                        "LEFT JOIN FETCH p.producto ",
+                Presupuestos.class
+        ).getResultList();
     }
 
+
     @Override
-    public Presupuestos findPresupuestoById(Integer id)
-    {
+    @Transactional
+    public Presupuestos findPresupuestoById(Integer id) {
         try {
-            em.getTransaction().begin();
-            Presupuestos p = em.find(Presupuestos.class, id);
-            em.getTransaction().commit();
-            return p;
-        }catch (Exception ex)
-        {
-            em.getTransaction().rollback();
+            return em.createQuery(
+                            "SELECT p FROM Presupuestos p " +
+                                    "LEFT JOIN FETCH p.empleado " +
+                                    "LEFT JOIN FETCH p.cliente_pagador " +
+                                    "LEFT JOIN FETCH p.cliente_beneficiario " +
+                                    "LEFT JOIN FETCH p.producto " +
+                                    "WHERE p.id_Presupuesto = :id",
+                            Presupuestos.class
+                    )
+                    .setParameter("id", id)
+                    .getSingleResult();
+        } catch (NoResultException e) {
+            return null;
         }
-        return null;
     }
 
-    @Override
 
+    @Override
     public Presupuestos createPresupuesto(Presupuestos p)
     {
         try
         {
             em.getTransaction().begin();
             em.persist(p);
+            em.flush(); // Forzar flush para obtener el ID generado
             em.getTransaction().commit();
             return p;
         }catch (Exception ex)
         {
-            em.getTransaction().rollback();
+            if (em.getTransaction().isActive()) {
+                em.getTransaction().rollback();
+            }
+            ex.printStackTrace();
+            throw new RuntimeException("Error al crear presupuesto: " + ex.getMessage(), ex);
         }
-        return null;
     }
 
     @Override
@@ -70,7 +88,6 @@ public class PresupuestosRepositoryImpl implements PresupuestosRepository {
     }
 
     @Override
-
     public void deletebyid(Integer id)
     {
         try
@@ -83,7 +100,11 @@ public class PresupuestosRepositoryImpl implements PresupuestosRepository {
             em.getTransaction().commit();
         }catch (Exception ex)
         {
-            em.getTransaction().rollback();
+            if (em.getTransaction().isActive()) {
+                em.getTransaction().rollback();
+            }
+            ex.printStackTrace();
+            throw new RuntimeException("Error al eliminar presupuesto: " + ex.getMessage(), ex);
         }
     }
 
@@ -93,13 +114,16 @@ public class PresupuestosRepositoryImpl implements PresupuestosRepository {
         try
         {
             em.getTransaction().begin();
-            em.merge(p);
+            Presupuestos actualizado = em.merge(p);
             em.getTransaction().commit();
-            return p;
+            return actualizado;
         }catch (Exception ex)
         {
-            em.getTransaction().rollback();
+            if (em.getTransaction().isActive()) {
+                em.getTransaction().rollback();
+            }
+            ex.printStackTrace();
+            throw new RuntimeException("Error al actualizar presupuesto: " + ex.getMessage(), ex);
         }
-        return null;
     }
 }

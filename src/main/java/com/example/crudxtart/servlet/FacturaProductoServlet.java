@@ -2,10 +2,8 @@ package com.example.crudxtart.servlet;
 
 import com.example.crudxtart.models.FacturaProducto;
 import com.example.crudxtart.service.FacturaProductoService;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+import com.example.crudxtart.utils.JsonUtil;
 import jakarta.inject.Inject;
-import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
@@ -21,16 +19,13 @@ public class FacturaProductoServlet extends HttpServlet {
     @Inject
     private FacturaProductoService facturaProductoService;
 
-    private final Gson gson = new GsonBuilder()
-            .setDateFormat("yyyy-MM-dd")
-            .create();
 
     // ============================================================
     // GET (todos o por id)
     // ============================================================
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
-            throws ServletException, IOException {
+            throws IOException {
 
         resp.setContentType("application/json");
         resp.setCharacterEncoding("UTF-8");
@@ -38,32 +33,28 @@ public class FacturaProductoServlet extends HttpServlet {
         try {
             String idParam = req.getParameter("id");
 
-            // GET /factura_productos
+            // GET /factura_productos?id=x
             if (idParam != null) {
                 Integer id = Integer.parseInt(idParam);
                 FacturaProducto fp = facturaProductoService.findFacturaProductoById(id);
 
                 if (fp == null) {
                     resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
-                    resp.getWriter().write(
-                            gson.toJson(error("FacturaProducto no encontrado"))
-                    );
+                    sendError(resp, "FacturaProducto no encontrado");
                     return;
                 }
 
-                resp.getWriter().write(gson.toJson(success(fp)));
+                sendSuccess(resp, fp);
                 return;
             }
 
-            // GET /factura_productos (todos)
+            // GET /factura_productos
             List<FacturaProducto> lista = facturaProductoService.findAllFacturaProductos();
-            resp.getWriter().write(gson.toJson(success(lista)));
+            sendSuccess(resp, lista);
 
         } catch (Exception ex) {
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            resp.getWriter().write(
-                    gson.toJson(error(ex.getMessage()))
-            );
+            sendError(resp, ex.getMessage());
         }
     }
 
@@ -78,20 +69,14 @@ public class FacturaProductoServlet extends HttpServlet {
         resp.setCharacterEncoding("UTF-8");
 
         try {
-            String body = readBody(req);
-            FacturaProducto fp = gson.fromJson(body, FacturaProducto.class);
+            FacturaProducto fp = JsonUtil.fromJson(readBody(req), FacturaProducto.class);
 
             FacturaProducto creado = facturaProductoService.createFacturaProducto(fp);
-
-            resp.getWriter().write(
-                    gson.toJson(success(creado))
-            );
+            sendSuccess(resp, creado);
 
         } catch (Exception ex) {
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            resp.getWriter().write(
-                    gson.toJson(error(ex.getMessage()))
-            );
+            sendError(resp, ex.getMessage());
         }
     }
 
@@ -106,28 +91,20 @@ public class FacturaProductoServlet extends HttpServlet {
         resp.setCharacterEncoding("UTF-8");
 
         try {
-            String body = readBody(req);
-            FacturaProducto fp = gson.fromJson(body, FacturaProducto.class);
+            FacturaProducto fp = JsonUtil.fromJson(readBody(req), FacturaProducto.class);
 
             if (fp.getId_factura_producto() == null) {
                 resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-                resp.getWriter().write(
-                        gson.toJson(error("El campo id_factura_producto es obligatorio para actualizar"))
-                );
+                sendError(resp, "El campo id_factura_producto es obligatorio para actualizar");
                 return;
             }
 
             FacturaProducto actualizado = facturaProductoService.upLocalDateFacturaProducto(fp);
-
-            resp.getWriter().write(
-                    gson.toJson(success(actualizado))
-            );
+            sendSuccess(resp, actualizado);
 
         } catch (Exception ex) {
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            resp.getWriter().write(
-                    gson.toJson(error(ex.getMessage()))
-            );
+            sendError(resp, ex.getMessage());
         }
     }
 
@@ -146,24 +123,18 @@ public class FacturaProductoServlet extends HttpServlet {
 
             if (idParam == null) {
                 resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-                resp.getWriter().write(
-                        gson.toJson(error("Debe proporcionar ID para eliminar"))
-                );
+                sendError(resp, "Debe proporcionar ?id= para eliminar");
                 return;
             }
 
             Integer id = Integer.parseInt(idParam);
             facturaProductoService.deleteFacturaProducto(id);
 
-            resp.getWriter().write(
-                    gson.toJson(success("FacturaProducto eliminado correctamente"))
-            );
+            sendSuccess(resp, "FacturaProducto eliminado correctamente");
 
         } catch (Exception ex) {
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            resp.getWriter().write(
-                    gson.toJson(error(ex.getMessage()))
-            );
+            sendError(resp, ex.getMessage());
         }
     }
 
@@ -172,27 +143,41 @@ public class FacturaProductoServlet extends HttpServlet {
     // ============================================================
     private String readBody(HttpServletRequest req) throws IOException {
         StringBuilder sb = new StringBuilder();
-        BufferedReader br = req.getReader();
-        String line;
-
-        while ((line = br.readLine()) != null) {
-            sb.append(line);
+        try (BufferedReader br = req.getReader()) {
+            String line;
+            while ((line = br.readLine()) != null) sb.append(line);
         }
-
         return sb.toString();
     }
 
-    private Object success(Object data) {
-        return new Object() {
-            final boolean success = true;
-            final Object dataObj = data;
-        };
+    private void sendSuccess(HttpServletResponse resp, Object data) throws IOException {
+        resp.getWriter().write(JsonUtil.toJson(new Response(true, data)));
     }
 
-    private Object error(String message) {
-        return new Object() {
-            final boolean success = false;
-            final String error = message;
-        };
+    private void sendError(HttpServletResponse resp, String msg) throws IOException {
+        resp.getWriter().write(JsonUtil.toJson(new Response(false, new ErrorMsg(msg))));
+    }
+
+    private static class Response {
+        final boolean success;
+        final Object data;
+
+        Response(boolean success, Object data) {
+            this.success = success;
+            this.data = data;
+        }
+
+        public boolean isSuccess() { return success; }
+        public Object getData() { return data; }
+    }
+
+    private static class ErrorMsg {
+        final String error;
+
+        ErrorMsg(String error) {
+            this.error = error;
+        }
+
+        public String getError() { return error; }
     }
 }

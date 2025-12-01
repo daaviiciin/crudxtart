@@ -1,12 +1,16 @@
 package com.example.crudxtart.models;
 
-
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table (name = "empleados")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Empleado
 {
     @Id
@@ -37,15 +41,14 @@ public class Empleado
     private Roles_empleado id_rol;
 
 
+    public Empleado()
+    {}
 
     public Empleado (String nombre, String email, String telefono) {
         this.nombre = nombre;
         this.email = email;
         this.telefono = telefono;
-
     }
-    public Empleado()
-    {}
 
     public Integer getId_empleado() {
         return id_empleado;

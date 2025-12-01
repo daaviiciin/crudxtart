@@ -1,11 +1,12 @@
 package com.example.crudxtart.models;
 
-
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
-import com.example.crudxtart.models.Factura;
 
 @Entity
 @Table(name = "factura_productos")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class FacturaProducto
 {
 
@@ -16,14 +17,17 @@ public class FacturaProducto
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_factura",nullable = false)
+    @JsonIgnore
     private Factura factura;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_producto",nullable = false)
+    @JsonIgnore
     private Producto Producto;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_cliente_beneficiario",nullable = false)
+    @JsonIgnore
     private Cliente cliente_beneficiario;
 
     @Column(name = "cantidad")
