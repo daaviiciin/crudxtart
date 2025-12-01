@@ -21,6 +21,14 @@ public class ClienteService {
         return clienteRepository.findClienteById(id);
     }
 
+    public Cliente findClienteByEmail(String email) {
+        return clienteRepository.findClienteByEmail(email);
+    }
+
+    public List<Cliente> findClientesByFilters(String nombre, String email, String telefono) {
+        return clienteRepository.findClientesByFilters(nombre, email, telefono);
+    }
+
     public Cliente createCliente(Cliente c) {
         validarCliente(c);
         return clienteRepository.createCliente(c);
@@ -39,6 +47,11 @@ public class ClienteService {
 
         if (cliente.getNombre() == null || cliente.getNombre().trim().isEmpty()) {
             throw new IllegalArgumentException("El nombre del cliente es obligatorio.");
+        }
+
+        // Password es obligatorio en BD, pero si no viene se establece un valor por defecto
+        if (cliente.getPassword() == null || cliente.getPassword().trim().isEmpty()) {
+            cliente.setPassword("cliente123"); // Valor por defecto
         }
 
         if (cliente.getEmail() != null && !cliente.getEmail().trim().isEmpty()) {

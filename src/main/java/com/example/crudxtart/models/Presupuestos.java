@@ -1,13 +1,15 @@
 package com.example.crudxtart.models;
 
-
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonGetter;
 import jakarta.persistence.*;
-import org.jboss.weld.annotated.runtime.InvokableAnnotatedMethod;
 
 import java.time.LocalDate;
 
 @Entity
 @Table (name = "presupuestos")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Presupuestos
 {
     @Id
@@ -17,18 +19,22 @@ public class Presupuestos
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_empleado",nullable = false)
+    @JsonIgnore
     private Empleado empleado;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_cliente_pagador",nullable = false)
+    @JsonIgnore
     private Cliente cliente_pagador;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_cliente_beneficiario",nullable = false)
+    @JsonIgnore
     private Cliente cliente_beneficiario;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_producto",nullable = false)
+    @JsonIgnore
     private Producto producto;
 
     @Column(name = "presupuesto",nullable = false)
@@ -122,5 +128,28 @@ public class Presupuestos
 
     public void setCliente_pagador(Cliente cliente_pagador) {
         this.cliente_pagador = cliente_pagador;
+    }
+
+    // ============================================================
+    // Getters personalizados para serializar solo los IDs
+    // ============================================================
+    @JsonGetter("id_empleado")
+    public Integer getId_empleado() {
+        return empleado != null ? empleado.getId_empleado() : null;
+    }
+
+    @JsonGetter("id_cliente_pagador")
+    public Integer getId_cliente_pagador() {
+        return cliente_pagador != null ? cliente_pagador.getId_cliente() : null;
+    }
+
+    @JsonGetter("id_cliente_beneficiario")
+    public Integer getId_cliente_beneficiario() {
+        return cliente_beneficiario != null ? cliente_beneficiario.getId_cliente() : null;
+    }
+
+    @JsonGetter("id_producto")
+    public Integer getId_producto() {
+        return producto != null ? producto.getId_producto() : null;
     }
 }

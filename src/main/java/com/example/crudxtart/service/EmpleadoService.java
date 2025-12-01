@@ -21,6 +21,10 @@ public class EmpleadoService {
         return empleadoRepository.findEmpleadoById(id);
     }
 
+    public Empleado findEmpleadoByEmail(String email) {
+        return empleadoRepository.findEmpleadoByEmail(email);
+    }
+
     public Empleado createEmpleado(Empleado e) {
         validarEmpleado(e);
         return empleadoRepository.createEmpleado(e);
@@ -47,6 +51,11 @@ public class EmpleadoService {
 
         if (!empleado.getEmail().contains("@")) {
             throw new IllegalArgumentException("El email del empleado no es válido: " + empleado.getEmail());
+        }
+
+        // Password es obligatorio en BD, pero si no viene se establece un valor por defecto
+        if (empleado.getPassword() == null || empleado.getPassword().trim().isEmpty()) {
+            empleado.setPassword("empleado123"); // Valor por defecto
         }
 
         if (empleado.getTelefono() != null && empleado.getTelefono().length() > 20) {

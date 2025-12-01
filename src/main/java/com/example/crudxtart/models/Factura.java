@@ -1,6 +1,8 @@
 package com.example.crudxtart.models;
 
-
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonGetter;
 import jakarta.persistence.*;
 
 import java.time.LocalDate;
@@ -9,6 +11,7 @@ import java.util.List;
 
 @Entity
 @Table(name = "facturas")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Factura
 {
     @Id
@@ -21,10 +24,12 @@ public class Factura
 
     @ManyToOne (fetch = FetchType.LAZY)
     @JoinColumn(name = "id_cliente_pagador", nullable = false)
+    @JsonIgnore
     private Cliente cliente_pagador;
 
     @ManyToOne (fetch = FetchType.LAZY)
     @JoinColumn(name = "id_empleado",nullable = false)
+    @JsonIgnore
     private Empleado empleado;
 
     @Column(name = "fecha_emision", nullable = false)
@@ -40,9 +45,11 @@ public class Factura
     private String notas;
 
     @OneToMany(mappedBy = "factura",cascade = CascadeType.ALL,orphanRemoval = true)
+    @JsonIgnore
     private List<Pagos> pagos = new ArrayList<>();
 
     @OneToMany(mappedBy = "factura",cascade = CascadeType.ALL,orphanRemoval = true)
+    @JsonIgnore
     List<FacturaProducto> productos = new ArrayList<>();
 
 
@@ -123,6 +130,24 @@ public class Factura
 
     public void setNotas(String notas) {
         this.notas = notas;
+    }
+
+    // ============================================================
+    // Getters personalizados para serializar solo los IDs
+    // ============================================================
+    @JsonGetter("id_cliente")
+    public Integer getId_cliente() {
+        return cliente_pagador != null ? cliente_pagador.getId_cliente() : null;
+    }
+
+    @JsonGetter("id_empleado")
+    public Integer getId_empleado() {
+        return empleado != null ? empleado.getId_empleado() : null;
+    }
+
+    @JsonGetter("fecha")
+    public LocalDate getFecha() {
+        return fecha_emision;
     }
 }
 

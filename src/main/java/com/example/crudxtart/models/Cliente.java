@@ -1,6 +1,7 @@
 package com.example.crudxtart.models;
 
-
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 
 import java.time.LocalDate;
@@ -9,6 +10,7 @@ import java.util.List;
 
 @Entity
 @Table(name = "clientes")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Cliente
 {
 
@@ -40,11 +42,12 @@ public class Cliente
     private Empleado empleado_responsable;
 
     @OneToMany(mappedBy = "cliente_pagador",cascade = CascadeType.ALL,orphanRemoval = true)
+    @JsonIgnore
     List<Factura> facturas=new ArrayList<>();
 
     @OneToMany(mappedBy = "cliente_beneficiario",cascade = CascadeType.ALL,orphanRemoval = true)
+    @JsonIgnore
     List<Presupuestos> Presupuesto=new ArrayList<>();
-
 
 
     public Cliente()

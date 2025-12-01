@@ -1,13 +1,16 @@
 package com.example.crudxtart.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonGetter;
 import jakarta.persistence.*;
-import jakarta.persistence.criteria.CriteriaBuilder;
 
 import java.time.LocalDate;
 import java.util.Objects;
 
 @Entity
 @Table(name ="pagos")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Pagos
 {
     @Id
@@ -17,6 +20,7 @@ public class Pagos
 
     @ManyToOne (fetch = FetchType.EAGER)
     @JoinColumn (name = "id_factura", nullable = false)
+    @JsonIgnore
     private Factura factura;
 
     @Column (name = "fecha_pago", nullable=false)
@@ -46,7 +50,7 @@ public class Pagos
     }
 
 
-    public int getId_pago() {
+    public Integer getId_pago() {
         return id_pago;
     }
 
@@ -104,5 +108,26 @@ public class Pagos
     @Override
     public int hashCode() {
         return Objects.hash(id_pago, factura, fecha_pago, importe, metodo_pago, estado);
+    }
+
+    // ============================================================
+    // Getters personalizados para serializar solo los IDs
+    // ============================================================
+    @JsonGetter("id_factura")
+    public Integer getId_factura() {
+        return factura != null ? factura.getId_factura() : null;
+    }
+
+    @JsonGetter("id_cliente")
+    public Integer getId_cliente() {
+        if (factura != null && factura.getCliente_pagador() != null) {
+            return factura.getCliente_pagador().getId_cliente();
+        }
+        return null;
+    }
+
+    @JsonGetter("fecha")
+    public LocalDate getFecha() {
+        return fecha_pago;
     }
 }

@@ -1,10 +1,11 @@
 package com.example.crudxtart.models;
 
-
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 
 @Entity
 @Table (name = "roles_empleado")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Roles_empleado
 {
     @Id
