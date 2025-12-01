@@ -1,25 +1,20 @@
 package com.example.crudxtart.servlet;
 
-import com.example.crudxtart.models.Empleado;
+import java.io.BufferedReader;
+import java.io.IOException;
+
 import com.example.crudxtart.models.Cliente;
-
-import com.example.crudxtart.service.EmpleadoService;
+import com.example.crudxtart.models.Empleado;
 import com.example.crudxtart.service.ClienteService;
-
+import com.example.crudxtart.service.EmpleadoService;
 import com.example.crudxtart.utils.JsonUtil;
-import com.google.gson.*;
 
 import jakarta.inject.Inject;
-import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
-
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.time.LocalDate;
 
 @WebServlet("/auth/login")
 public class LoginServlet extends HttpServlet {
@@ -30,27 +25,23 @@ public class LoginServlet extends HttpServlet {
     @Inject
     private ClienteService clienteService;
 
-    private final Gson gson = JsonUtil.gson;
-
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp)
-            throws ServletException, IOException {
+            throws IOException {
 
         resp.setContentType("application/json;charset=UTF-8");
 
         try {
-            // Leer JSON
-            String body = readBody(req);
-            LoginRequest data = gson.fromJson(body, LoginRequest.class);
+            LoginRequest data = JsonUtil.fromJson(readBody(req), LoginRequest.class);
 
             if (data == null || data.email == null || data.password == null) {
                 sendError(resp, "Email y password requeridos");
                 return;
             }
 
-            // ========================
+            // =====================================================
             // LOGIN EMPLEADO
-            // ========================
+            // =====================================================
             Empleado emp = empleadoService.findEmpleadoByEmail(data.email);
 
             if (emp != null && emp.getPassword().equals(data.password)) {
@@ -70,9 +61,9 @@ public class LoginServlet extends HttpServlet {
                 return;
             }
 
-            // ========================
+            // =====================================================
             // LOGIN CLIENTE
-            // ========================
+            // =====================================================
             Cliente cli = clienteService.findClienteByEmail(data.email);
 
             if (cli != null && cli.getPassword().equals(data.password)) {
@@ -92,58 +83,66 @@ public class LoginServlet extends HttpServlet {
                 return;
             }
 
-            // Ningún usuario coincide
+            // =====================================================
+            // Credenciales incorrectas
+            // =====================================================
             sendError(resp, "Credenciales incorrectas");
 
         } catch (Exception ex) {
-            sendError(resp, "Error: " + ex.getMessage());
+            sendError(resp, ex.getMessage());
         }
     }
 
-    // =======================================================
-    // Helpers
-    // =======================================================
-
-    private void sendSuccess(HttpServletResponse resp, Object dataObj) throws IOException {
-        ResponseWrapper response = new ResponseWrapper(true, dataObj);
-        resp.getWriter().write(gson.toJson(response));
-    }
-
-    private void sendError(HttpServletResponse resp, String msg) throws IOException {
-        ResponseWrapper response = new ResponseWrapper(false, new ErrorWrapper(msg));
-        resp.getWriter().write(gson.toJson(response));
-    }
-
+    // ============================================================
+    // Helpers comunes
+    // ============================================================
     private String readBody(HttpServletRequest req) throws IOException {
         StringBuilder sb = new StringBuilder();
-        BufferedReader br = req.getReader();
-        String line;
-        while ((line = br.readLine()) != null) sb.append(line);
+        try (BufferedReader br = req.getReader()) {
+            String line;
+            while ((line = br.readLine()) != null) sb.append(line);
+        }
         return sb.toString();
     }
 
+    private void sendSuccess(HttpServletResponse resp, Object dataObj) throws IOException {
+        resp.getWriter().write(JsonUtil.toJson(new ResponseWrapper(true, dataObj)));
+    }
+
+    private void sendError(HttpServletResponse resp, String msg) throws IOException {
+        resp.getWriter().write(JsonUtil.toJson(new ResponseWrapper(false, new ErrorWrapper(msg))));
+    }
+
+    // ============================================================
+    // Clases DTO internas
+    // ============================================================
     private static class LoginRequest {
         String email;
         String password;
+
+        public String getEmail() { return email; }
+        public String getPassword() { return password; }
     }
 
-    // JSON limpio, estable, serializable
     private static class ResponseWrapper {
         final boolean success;
         final Object data;
-
         ResponseWrapper(boolean success, Object data) {
             this.success = success;
             this.data = data;
         }
+
+        public boolean isSuccess() { return success; }
+        public Object getData() { return data; }
     }
 
     private static class ErrorWrapper {
         final String error;
-
         ErrorWrapper(String error) {
             this.error = error;
         }
+
+        public String getError() { return error; }
     }
 
     private static class UserResponse {
@@ -160,5 +159,11 @@ public class LoginServlet extends HttpServlet {
             this.rol = rol;
             this.tipo = tipo;
         }
+
+        public int getId() { return id; }
+        public String getNombre() { return nombre; }
+        public String getEmail() { return email; }
+        public String getRol() { return rol; }
+        public String getTipo() { return tipo; }
     }
 }

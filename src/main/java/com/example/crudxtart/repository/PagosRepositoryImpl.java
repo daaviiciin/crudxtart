@@ -1,12 +1,14 @@
 package com.example.crudxtart.repository;
 
+import java.util.List;
+
 import com.example.crudxtart.models.Pagos;
+
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.NoResultException;
 import jakarta.transaction.Transactional;
-
-import java.util.List;
 
 @ApplicationScoped
 public class PagosRepositoryImpl implements PagosRepository
@@ -19,14 +21,33 @@ public class PagosRepositoryImpl implements PagosRepository
     @Override
     public List<Pagos> findAllPagos()
     {
-        return em.createQuery("SELECT p FROM Pagos p", Pagos.class).getResultList();
+        return em.createQuery(
+                "SELECT p FROM Pagos p " +
+                        "LEFT JOIN FETCH p.factura f " +
+                        "LEFT JOIN FETCH f.cliente_pagador",
+                Pagos.class
+        ).getResultList();
     }
 
     @Override
     public Pagos findPagosById(Integer id)
     {
-        Pagos p =em.find(Pagos.class, id);
-        return p;
+        try {
+            return em.createQuery(
+                            "SELECT p FROM Pagos p " +
+                                    "LEFT JOIN FETCH p.factura f " +
+                                    "LEFT JOIN FETCH f.cliente_pagador " +
+                                    "WHERE p.id_pago = :id",
+                            Pagos.class
+                    )
+                    .setParameter("id", id)
+                    .getSingleResult();
+        } catch (NoResultException e) {
+            return null;
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            return null;
+        }
     }
 
     @Override
@@ -36,13 +57,17 @@ public class PagosRepositoryImpl implements PagosRepository
         {
             em.getTransaction().begin();
             em.persist(p);
+            em.flush(); // Forzar la generación del ID
             em.getTransaction().commit();
 
         }catch(Exception ex)
         {
-           ex.printStackTrace();
+            if (em.getTransaction().isActive()) {
+                em.getTransaction().rollback();
+            }
+            ex.printStackTrace();
         }
-         return p;
+        return p;
     }
 
     @Override
@@ -63,20 +88,20 @@ public class PagosRepositoryImpl implements PagosRepository
     @Transactional
     public void deletebyid( Integer  id)
     {
-       try
-       {
-           em.getTransaction().begin();
-           Pagos p =em.find(Pagos.class, id);
-           if(p!=null)
-           {
-               em.remove(p);
-           }
-           em.getTransaction().commit();
-           return;
-       }catch (Exception ex)
-       {
-           ex.printStackTrace();
-       }
+        try
+        {
+            em.getTransaction().begin();
+            Pagos p =em.find(Pagos.class, id);
+            if(p!=null)
+            {
+                em.remove(p);
+            }
+            em.getTransaction().commit();
+            return;
+        }catch (Exception ex)
+        {
+            ex.printStackTrace();
+        }
 
     }
 

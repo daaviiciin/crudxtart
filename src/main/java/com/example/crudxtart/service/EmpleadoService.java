@@ -53,6 +53,11 @@ public class EmpleadoService {
             throw new IllegalArgumentException("El email del empleado no es válido: " + empleado.getEmail());
         }
 
+        // Password es obligatorio en BD, pero si no viene se establece un valor por defecto
+        if (empleado.getPassword() == null || empleado.getPassword().trim().isEmpty()) {
+            empleado.setPassword("empleado123"); // Valor por defecto
+        }
+
         if (empleado.getTelefono() != null && empleado.getTelefono().length() > 20) {
             throw new IllegalArgumentException("El teléfono supera la longitud máxima permitida.");
         }

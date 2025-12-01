@@ -1,21 +1,22 @@
 package com.example.crudxtart.servlet;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.util.List;
+
 import com.example.crudxtart.models.Pagos;
+import com.example.crudxtart.models.Factura;
 import com.example.crudxtart.service.PagosService;
+import com.example.crudxtart.service.FacturaService;
 import com.example.crudxtart.utils.JsonUtil;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import jakarta.inject.Inject;
-import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.util.List;
 
 @WebServlet("/pagos")
 public class PagosServlet extends HttpServlet {
@@ -23,14 +24,16 @@ public class PagosServlet extends HttpServlet {
     @Inject
     private PagosService pagosService;
 
-    private final Gson gson = JsonUtil.gson;
+    @Inject
+    private FacturaService facturaService;
+
 
     // ============================================================
     // GET (todos o por id)
     // ============================================================
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
-            throws ServletException, IOException {
+            throws IOException {
 
         resp.setContentType("application/json");
         resp.setCharacterEncoding("UTF-8");
@@ -38,32 +41,28 @@ public class PagosServlet extends HttpServlet {
         try {
             String idParam = req.getParameter("id");
 
-            // GET /pagos?id=10
+            // GET /pagos?id=x
             if (idParam != null) {
                 Integer id = Integer.parseInt(idParam);
-                Pagos pag = pagosService.findPagosById(id);
+                Pagos pago = pagosService.findPagosById(id);
 
-                if (pag == null) {
+                if (pago == null) {
                     resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
-                    resp.getWriter().write(
-                            gson.toJson(error("Pago no encontrado"))
-                    );
+                    sendError(resp, "Pago no encontrado");
                     return;
                 }
 
-                resp.getWriter().write(gson.toJson(success(pag)));
+                sendSuccess(resp, pago);
                 return;
             }
 
-            // GET /pagos (todos)
+            // GET /pagos
             List<Pagos> lista = pagosService.findAllPagos();
-            resp.getWriter().write(gson.toJson(success(lista)));
+            sendSuccess(resp, lista);
 
         } catch (Exception ex) {
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            resp.getWriter().write(
-                    gson.toJson(error(ex.getMessage()))
-            );
+            sendError(resp, ex.getMessage());
         }
     }
 
@@ -72,26 +71,103 @@ public class PagosServlet extends HttpServlet {
     // ============================================================
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp)
-            throws ServletException, IOException {
+            throws IOException {
 
         resp.setContentType("application/json");
         resp.setCharacterEncoding("UTF-8");
 
         try {
             String body = readBody(req);
-            Pagos pag = gson.fromJson(body, Pagos.class);
+            
+            // Parsear JSON para obtener campos
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode jsonNode = mapper.readTree(body);
+            
+            // Crear nuevo objeto Pagos
+            Pagos pago = new Pagos();
+            pago.setId_pago(null); // Asegurar que el ID sea null para crear nuevo registro
+            
+            // Extraer y validar campos básicos
+            if (jsonNode.has("importe") && jsonNode.get("importe").isNumber()) {
+                pago.setImporte(jsonNode.get("importe").asDouble());
+            } else {
+                resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                sendError(resp, "El campo 'importe' es obligatorio y debe ser un número");
+                return;
+            }
+            
+            if (jsonNode.has("metodo_pago") && jsonNode.get("metodo_pago").isTextual()) {
+                pago.setMetodo_pago(jsonNode.get("metodo_pago").asText());
+            } else {
+                resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                sendError(resp, "El campo 'metodo_pago' es obligatorio");
+                return;
+            }
+            
+            if (jsonNode.has("estado") && jsonNode.get("estado").isTextual()) {
+                pago.setEstado(jsonNode.get("estado").asText());
+            } else {
+                resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                sendError(resp, "El campo 'estado' es obligatorio");
+                return;
+            }
+            
+            // Manejar fecha_pago (o fecha)
+            if (jsonNode.has("fecha_pago") && jsonNode.get("fecha_pago").isTextual()) {
+                try {
+                    pago.setFecha_pago(java.time.LocalDate.parse(jsonNode.get("fecha_pago").asText()));
+                } catch (Exception e) {
+                    resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                    sendError(resp, "Formato de fecha_pago inválido. Use formato YYYY-MM-DD");
+                    return;
+                }
+            } else if (jsonNode.has("fecha") && jsonNode.get("fecha").isTextual()) {
+                try {
+                    pago.setFecha_pago(java.time.LocalDate.parse(jsonNode.get("fecha").asText()));
+                } catch (Exception e) {
+                    resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                    sendError(resp, "Formato de fecha inválido. Use formato YYYY-MM-DD");
+                    return;
+                }
+            } else {
+                // Si no viene fecha, establecerla automáticamente
+                pago.setFecha_pago(java.time.LocalDate.now());
+            }
+            
+            // Manejar factura (obligatorio)
+            if (jsonNode.has("id_factura") && jsonNode.get("id_factura").isNumber()) {
+                Integer facturaId = jsonNode.get("id_factura").asInt();
+                Factura fac = facturaService.findFacturaById(facturaId);
+                if (fac != null) {
+                    pago.setFactura(fac);
+                } else {
+                    resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                    sendError(resp, "Factura no encontrada con id: " + facturaId);
+                    return;
+                }
+            } else {
+                resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                sendError(resp, "El campo 'id_factura' es obligatorio");
+                return;
+            }
 
-            Pagos creado = pagosService.createPagos(pag);
+            Pagos creado = pagosService.createPagos(pago);
+            
+            // Verificar que el ID se generó correctamente
+            if (creado.getId_pago() == null) {
+                resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                sendError(resp, "Error: No se pudo generar el ID del pago");
+                return;
+            }
+            
+            sendSuccess(resp, creado);
 
-            resp.getWriter().write(
-                    gson.toJson(success(creado))
-            );
-
+        } catch (com.fasterxml.jackson.core.JsonProcessingException ex) {
+            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            sendError(resp, "Error en el formato JSON: " + ex.getMessage());
         } catch (Exception ex) {
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            resp.getWriter().write(
-                    gson.toJson(error(ex.getMessage()))
-            );
+            sendError(resp, ex.getMessage());
         }
     }
 
@@ -100,48 +176,112 @@ public class PagosServlet extends HttpServlet {
     // ============================================================
     @Override
     protected void doPut(HttpServletRequest req, HttpServletResponse resp)
-            throws ServletException, IOException {
+            throws IOException {
 
         resp.setContentType("application/json");
         resp.setCharacterEncoding("UTF-8");
 
         try {
             String body = readBody(req);
-            Pagos pag = gson.fromJson(body, Pagos.class);
+            
+            // Parsear JSON para verificar qué campos están presentes
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode jsonNode = mapper.readTree(body);
 
-            // Validar parámetro id_pago
-            if (req.getParameter("id_pago") == null) {
+            // Verificar que id_pago esté presente
+            if (!jsonNode.has("id_pago") || !jsonNode.get("id_pago").isNumber()) {
                 resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-                resp.getWriter().write(
-                        gson.toJson(error("El campo id_pago es obligatorio para actualizar"))
-                );
+                sendError(resp, "El campo id_pago es obligatorio para actualizar");
                 return;
             }
 
-            // Parsear id_pago y asignarlo al objeto
-            int id_pago = Integer.parseInt(req.getParameter("id_pago"));
-            pag.setId_pago(id_pago);
+            Integer idPago = jsonNode.get("id_pago").asInt();
 
-            // Llamada correcta al servicio
-            Pagos actualizado = pagosService.upLocalDatePagos(pag);
+            // Cargar el pago existente para preservar campos no enviados
+            Pagos existente = pagosService.findPagosById(idPago);
+            if (existente == null) {
+                resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
+                sendError(resp, "Pago no encontrado");
+                return;
+            }
+            
+            // Actualizar solo los campos enviados (actualización parcial)
+            if (jsonNode.has("importe") && jsonNode.get("importe").isNumber()) {
+                double nuevoImporte = jsonNode.get("importe").asDouble();
+                if (nuevoImporte > 0) {
+                    existente.setImporte(nuevoImporte);
+                }
+            }
+            
+            if (jsonNode.has("metodo_pago") && jsonNode.get("metodo_pago").isTextual()) {
+                String nuevoMetodo = jsonNode.get("metodo_pago").asText();
+                if (nuevoMetodo != null && !nuevoMetodo.trim().isEmpty()) {
+                    existente.setMetodo_pago(nuevoMetodo);
+                }
+            }
+            
+            if (jsonNode.has("estado") && jsonNode.get("estado").isTextual()) {
+                String nuevoEstado = jsonNode.get("estado").asText();
+                if (nuevoEstado != null && !nuevoEstado.trim().isEmpty()) {
+                    existente.setEstado(nuevoEstado);
+                }
+            }
+            
+            if (jsonNode.has("fecha_pago") && jsonNode.get("fecha_pago").isTextual()) {
+                try {
+                    String fechaStr = jsonNode.get("fecha_pago").asText();
+                    if (fechaStr != null && !fechaStr.trim().isEmpty()) {
+                        existente.setFecha_pago(java.time.LocalDate.parse(fechaStr));
+                    }
+                } catch (Exception e) {
+                    resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                    sendError(resp, "Formato de fecha_pago inválido. Use formato YYYY-MM-DD");
+                    return;
+                }
+            } else if (jsonNode.has("fecha") && jsonNode.get("fecha").isTextual()) {
+                try {
+                    String fechaStr = jsonNode.get("fecha").asText();
+                    if (fechaStr != null && !fechaStr.trim().isEmpty()) {
+                        existente.setFecha_pago(java.time.LocalDate.parse(fechaStr));
+                    }
+                } catch (Exception e) {
+                    resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                    sendError(resp, "Formato de fecha inválido. Use formato YYYY-MM-DD");
+                    return;
+                }
+            }
+            
+            // Manejar factura si viene en el JSON
+            if (jsonNode.has("id_factura") && jsonNode.get("id_factura").isNumber()) {
+                Integer facturaId = jsonNode.get("id_factura").asInt();
+                Factura fac = facturaService.findFacturaById(facturaId);
+                if (fac != null) {
+                    existente.setFactura(fac);
+                } else {
+                    resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                    sendError(resp, "Factura no encontrada con id: " + facturaId);
+                    return;
+                }
+            }
 
-            resp.getWriter().write(gson.toJson(success(actualizado)));
+            Pagos actualizado = pagosService.upLocalDatePagos(existente);
+            sendSuccess(resp, actualizado);
 
+        } catch (com.fasterxml.jackson.core.JsonProcessingException ex) {
+            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            sendError(resp, "Error en el formato JSON: " + ex.getMessage());
         } catch (Exception ex) {
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            resp.getWriter().write(
-                    gson.toJson(error(ex.getMessage()))
-            );
+            sendError(resp, ex.getMessage());
         }
     }
-
 
     // ============================================================
     // DELETE (eliminar)
     // ============================================================
     @Override
     protected void doDelete(HttpServletRequest req, HttpServletResponse resp)
-            throws ServletException, IOException {
+            throws IOException {
 
         resp.setContentType("application/json");
         resp.setCharacterEncoding("UTF-8");
@@ -151,24 +291,18 @@ public class PagosServlet extends HttpServlet {
 
             if (idParam == null) {
                 resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-                resp.getWriter().write(
-                        gson.toJson(error("Debe proporcionar ?id= para eliminar"))
-                );
+                sendError(resp, "Debe proporcionar ?id= para eliminar");
                 return;
             }
 
             Integer id = Integer.parseInt(idParam);
             pagosService.deletePagos(id);
 
-            resp.getWriter().write(
-                    gson.toJson(success("Pago eliminado correctamente"))
-            );
+            sendSuccess(resp, null);
 
         } catch (Exception ex) {
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            resp.getWriter().write(
-                    gson.toJson(error(ex.getMessage()))
-            );
+            sendError(resp, ex.getMessage());
         }
     }
 
@@ -177,27 +311,41 @@ public class PagosServlet extends HttpServlet {
     // ============================================================
     private String readBody(HttpServletRequest req) throws IOException {
         StringBuilder sb = new StringBuilder();
-        BufferedReader br = req.getReader();
-        String line;
-
-        while ((line = br.readLine()) != null) {
-            sb.append(line);
+        try (BufferedReader br = req.getReader()) {
+            String line;
+            while ((line = br.readLine()) != null) sb.append(line);
         }
-
         return sb.toString();
     }
 
-    private Object success(Object data) {
-        return new Object() {
-            final boolean success = true;
-            final Object dataObj = data;
-        };
+    private void sendSuccess(HttpServletResponse resp, Object data) throws IOException {
+        resp.getWriter().write(JsonUtil.toJson(new Response(true, data)));
     }
 
-    private Object error(String message) {
-        return new Object() {
-            final boolean success = false;
-            final String error = message;
-        };
+    private void sendError(HttpServletResponse resp, String msg) throws IOException {
+        resp.getWriter().write(JsonUtil.toJson(new Response(false, new ErrorMsg(msg))));
+    }
+
+    private static class Response {
+        final boolean success;
+        final Object data;
+
+        Response(boolean success, Object data) {
+            this.success = success;
+            this.data = data;
+        }
+
+        public boolean isSuccess() { return success; }
+        public Object getData() { return data; }
+    }
+
+    private static class ErrorMsg {
+        final String error;
+
+        ErrorMsg(String error) {
+            this.error = error;
+        }
+
+        public String getError() { return error; }
     }
 }

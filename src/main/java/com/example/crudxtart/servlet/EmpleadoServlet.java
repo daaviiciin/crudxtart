@@ -1,22 +1,20 @@
 package com.example.crudxtart.servlet;
 
-import com.example.crudxtart.models.Empleado;
-import com.example.crudxtart.models.Roles_empleado;
-import com.example.crudxtart.service.EmpleadoService;
-import com.example.crudxtart.utils.JsonUtil;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import jakarta.inject.Inject;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.annotation.WebServlet;
-import jakarta.servlet.http.HttpServlet;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.util.List;
+
+import com.example.crudxtart.models.Empleado;
+import com.example.crudxtart.service.EmpleadoService;
+import com.example.crudxtart.service.Roles_empleadoService;
+import com.example.crudxtart.utils.JsonUtil;
+
+import jakarta.inject.Inject;
+import jakarta.servlet.annotation.WebServlet;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 @WebServlet("/empleados")
 public class EmpleadoServlet extends HttpServlet {
@@ -24,14 +22,15 @@ public class EmpleadoServlet extends HttpServlet {
     @Inject
     private EmpleadoService empleadoService;
 
-    private final Gson gson = JsonUtil.gson;
+    @Inject
+    private Roles_empleadoService rolesService;
 
     // ============================================================
     // GET (todos o por id)
     // ============================================================
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
-            throws ServletException, IOException {
+            throws IOException {
 
         resp.setContentType("application/json");
         resp.setCharacterEncoding("UTF-8");
@@ -46,21 +45,21 @@ public class EmpleadoServlet extends HttpServlet {
 
                 if (emp == null) {
                     resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
-                    resp.getWriter().write(gson.toJson(error("Empleado no encontrado")));
+                    sendError(resp, "Empleado no encontrado");
                     return;
                 }
 
-                resp.getWriter().write(gson.toJson(success(emp)));
+                sendSuccess(resp, emp);
                 return;
             }
 
             // GET /empleados (todos)
             List<Empleado> empleados = empleadoService.findAllEmpleados();
-            resp.getWriter().write(gson.toJson(success(empleados)));
+            sendSuccess(resp, empleados);
 
         } catch (Exception ex) {
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            resp.getWriter().write(gson.toJson(error(ex.getMessage())));
+            sendError(resp, ex.getMessage());
         }
     }
 
@@ -69,26 +68,66 @@ public class EmpleadoServlet extends HttpServlet {
     // ============================================================
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp)
-            throws ServletException, IOException {
+            throws IOException {
 
         resp.setContentType("application/json");
         resp.setCharacterEncoding("UTF-8");
 
         try {
             String body = readBody(req);
-            Empleado emp = gson.fromJson(body, Empleado.class);
+            Empleado emp = JsonUtil.fromJson(body, Empleado.class);
 
+            // Asegurar que el ID sea null para crear nuevo registro
+            emp.setId_empleado(null);
+
+            // Si no viene fecha_ingreso, establecerla automáticamente
             if (emp.getFecha_ingreso() == null) {
                 emp.setFecha_ingreso(LocalDate.now());
             }
 
+            // Si no viene estado, establecerlo a "activo" por defecto
+            if (emp.getEstado() == null || emp.getEstado().trim().isEmpty()) {
+                emp.setEstado("activo");
+            }
+
+            // Manejar id_rol si viene en el JSON
+            // El frontend puede enviar: {"id_rol": {"id_rol": 1}}
+            if (emp.getId_rol() != null && emp.getId_rol().getId_rol() != null) {
+                // Cargar el rol desde la base de datos
+                try {
+                    com.example.crudxtart.models.Roles_empleado rol = 
+                        rolesService.findRolById(emp.getId_rol().getId_rol());
+                    if (rol != null) {
+                        emp.setId_rol(rol);
+                    } else {
+                        // Si el rol no existe, establecer a null
+                        emp.setId_rol(null);
+                    }
+                } catch (Exception ex) {
+                    // Si no se puede cargar el rol, establecer a null
+                    emp.setId_rol(null);
+                }
+            } else {
+                emp.setId_rol(null);
+            }
+
             Empleado creado = empleadoService.createEmpleado(emp);
+            
+            // Verificar que el ID se generó correctamente
+            if (creado.getId_empleado() == null) {
+                resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                sendError(resp, "Error: No se pudo generar el ID del empleado");
+                return;
+            }
+            
+            sendSuccess(resp, creado);
 
-            resp.getWriter().write(gson.toJson(success(creado)));
-
+        } catch (com.fasterxml.jackson.core.JsonProcessingException ex) {
+            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            sendError(resp, "Error en el formato JSON: " + ex.getMessage());
         } catch (Exception ex) {
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            resp.getWriter().write(gson.toJson(error(ex.getMessage())));
+            sendError(resp, ex.getMessage());
         }
     }
 
@@ -97,28 +136,67 @@ public class EmpleadoServlet extends HttpServlet {
     // ============================================================
     @Override
     protected void doPut(HttpServletRequest req, HttpServletResponse resp)
-            throws ServletException, IOException {
+            throws IOException {
 
         resp.setContentType("application/json");
         resp.setCharacterEncoding("UTF-8");
 
         try {
             String body = readBody(req);
-            Empleado emp = gson.fromJson(body, Empleado.class);
+            Empleado emp = JsonUtil.fromJson(body, Empleado.class);
 
             if (emp.getId_empleado() == null) {
                 resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-                resp.getWriter().write(gson.toJson(error("El campo id_empleado es obligatorio para actualizar")));
+                sendError(resp, "El campo id_empleado es obligatorio para actualizar");
                 return;
             }
 
-            Empleado actualizado = empleadoService.upLocalDateEmpleado(emp);
+            // Cargar el empleado existente para preservar campos no enviados
+            Empleado existente = empleadoService.findEmpleadoById(emp.getId_empleado());
+            if (existente == null) {
+                resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
+                sendError(resp, "Empleado no encontrado");
+                return;
+            }
+            
+            // Actualizar solo los campos enviados (si vienen null, mantener los existentes)
+            if (emp.getNombre() != null) {
+                existente.setNombre(emp.getNombre());
+            }
+            if (emp.getEmail() != null) {
+                existente.setEmail(emp.getEmail());
+            }
+            if (emp.getTelefono() != null) {
+                existente.setTelefono(emp.getTelefono());
+            }
+            if (emp.getPassword() != null) {
+                existente.setPassword(emp.getPassword());
+            }
+            if (emp.getFecha_ingreso() != null) {
+                existente.setFecha_ingreso(emp.getFecha_ingreso());
+            }
+            if (emp.getEstado() != null) {
+                existente.setEstado(emp.getEstado());
+            }
+            // Manejar id_rol si viene en el JSON
+            if (emp.getId_rol() != null && emp.getId_rol().getId_rol() != null) {
+                // Cargar el rol desde la base de datos
+                com.example.crudxtart.models.Roles_empleado rol = 
+                    rolesService.findRolById(emp.getId_rol().getId_rol());
+                if (rol != null) {
+                    existente.setId_rol(rol);
+                }
+            }
 
-            resp.getWriter().write(gson.toJson(success(actualizado)));
+            Empleado actualizado = empleadoService.upLocalDateEmpleado(existente);
+            sendSuccess(resp, actualizado);
 
+        } catch (com.fasterxml.jackson.core.JsonProcessingException ex) {
+            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            sendError(resp, "Error en el formato JSON: " + ex.getMessage());
         } catch (Exception ex) {
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            resp.getWriter().write(gson.toJson(error(ex.getMessage())));
+            sendError(resp, ex.getMessage());
         }
     }
 
@@ -127,7 +205,7 @@ public class EmpleadoServlet extends HttpServlet {
     // ============================================================
     @Override
     protected void doDelete(HttpServletRequest req, HttpServletResponse resp)
-            throws ServletException, IOException {
+            throws IOException {
 
         resp.setContentType("application/json");
         resp.setCharacterEncoding("UTF-8");
@@ -137,18 +215,28 @@ public class EmpleadoServlet extends HttpServlet {
 
             if (idParam == null) {
                 resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-                resp.getWriter().write(gson.toJson(error("Debe proporcionar ?id= para eliminar")));
+                sendError(resp, "Debe proporcionar ?id= para eliminar");
                 return;
             }
 
             Integer id = Integer.parseInt(idParam);
+            
+            // Verificar que el empleado existe antes de eliminar
+            Empleado emp = empleadoService.findEmpleadoById(id);
+            if (emp == null) {
+                resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
+                sendError(resp, "Empleado no encontrado");
+                return;
+            }
+            
             empleadoService.deleteEmpleado(id);
 
-            resp.getWriter().write(gson.toJson(success("Empleado eliminado correctamente")));
+            // Devolver null en data para indicar éxito sin datos
+            sendSuccess(resp, null);
 
         } catch (Exception ex) {
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            resp.getWriter().write(gson.toJson(error(ex.getMessage())));
+            sendError(resp, ex.getMessage());
         }
     }
 
@@ -157,40 +245,41 @@ public class EmpleadoServlet extends HttpServlet {
     // ============================================================
     private String readBody(HttpServletRequest req) throws IOException {
         StringBuilder sb = new StringBuilder();
-        BufferedReader br = req.getReader();
-        String line;
-
-        while ((line = br.readLine()) != null) {
-            sb.append(line);
+        try (BufferedReader br = req.getReader()) {
+            String line;
+            while ((line = br.readLine()) != null) sb.append(line);
         }
-
         return sb.toString();
     }
 
-    private Object success(Object dataObj) {
-        return new ResponseWrapper(true, dataObj);
+    private void sendSuccess(HttpServletResponse resp, Object dataObj) throws IOException {
+        resp.getWriter().write(JsonUtil.toJson(new Response(true, dataObj)));
     }
 
-    private Object error(String msg) {
-        return new ResponseWrapper(false, new ErrorWrapper(msg));
+    private void sendError(HttpServletResponse resp, String msg) throws IOException {
+        resp.getWriter().write(JsonUtil.toJson(new Response(false, new ErrorMsg(msg))));
     }
 
-    private static class ResponseWrapper {
+    private static class Response {
         final boolean success;
         final Object data;
 
-        ResponseWrapper(boolean success, Object data) {
+        Response(boolean success, Object data) {
             this.success = success;
             this.data = data;
         }
+
+        public boolean isSuccess() { return success; }
+        public Object getData() { return data; }
     }
 
-    private static class ErrorWrapper {
+    private static class ErrorMsg {
         final String error;
 
-        ErrorWrapper(String error) {
+        ErrorMsg(String error) {
             this.error = error;
         }
-    }
 
+        public String getError() { return error; }
+    }
 }

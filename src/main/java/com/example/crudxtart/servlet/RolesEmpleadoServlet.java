@@ -3,10 +3,7 @@ package com.example.crudxtart.servlet;
 import com.example.crudxtart.models.Roles_empleado;
 import com.example.crudxtart.service.Roles_empleadoService;
 import com.example.crudxtart.utils.JsonUtil;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import jakarta.inject.Inject;
-import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
@@ -22,14 +19,13 @@ public class RolesEmpleadoServlet extends HttpServlet {
     @Inject
     private Roles_empleadoService rolesService;
 
-    private final Gson gson = JsonUtil.gson;
 
     // ============================================================
     // GET (todos o por id)
     // ============================================================
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
-            throws ServletException, IOException {
+            throws IOException {
 
         resp.setContentType("application/json");
         resp.setCharacterEncoding("UTF-8");
@@ -37,34 +33,33 @@ public class RolesEmpleadoServlet extends HttpServlet {
         try {
             String idParam = req.getParameter("id");
 
-            // GET /roles
+            // GET /roles?id=X
             if (idParam != null) {
                 Integer id = Integer.parseInt(idParam);
-                Roles_empleado r = rolesService.findRolById(id);
+                Roles_empleado rol = rolesService.findRolById(id);
 
-                if (r == null) {
+                if (rol == null) {
                     resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
-                    resp.getWriter().write(gson.toJson(error("Rol no encontrado")));
+                    sendError(resp, "Rol no encontrado");
                     return;
                 }
 
-                resp.getWriter().write(gson.toJson(success(r)));
+                sendSuccess(resp, rol);
                 return;
             }
 
             // GET /roles (todos)
             List<Roles_empleado> roles = rolesService.findAllRoles_empleado();
-
-            resp.getWriter().write(gson.toJson(success(roles)));
+            sendSuccess(resp, roles);
 
         } catch (Exception ex) {
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            resp.getWriter().write(gson.toJson(error(ex.getMessage())));
+            sendError(resp, ex.getMessage());
         }
     }
 
     // ============================================================
-    // POST (crear rol)
+    // POST (crear)
     // ============================================================
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp)
@@ -74,22 +69,19 @@ public class RolesEmpleadoServlet extends HttpServlet {
         resp.setCharacterEncoding("UTF-8");
 
         try {
-            String body = readBody(req);
-            Roles_empleado rol = gson.fromJson(body, Roles_empleado.class);
+            Roles_empleado rol = JsonUtil.fromJson(readBody(req), Roles_empleado.class);
 
-            Roles_empleado created = rolesService.createRol(rol);
-
-            resp.getWriter().write(gson.toJson(success(created)));
+            Roles_empleado creado = rolesService.createRol(rol);
+            sendSuccess(resp, creado);
 
         } catch (Exception ex) {
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            resp.getWriter().write(
-                    gson.toJson(error(ex.getMessage())));
+            sendError(resp, ex.getMessage());
         }
     }
 
     // ============================================================
-    // PUT (actualizar rol)
+    // PUT (actualizar)
     // ============================================================
     @Override
     protected void doPut(HttpServletRequest req, HttpServletResponse resp)
@@ -99,31 +91,25 @@ public class RolesEmpleadoServlet extends HttpServlet {
         resp.setCharacterEncoding("UTF-8");
 
         try {
-            String body = readBody(req);
-            Roles_empleado rol = gson.fromJson(body, Roles_empleado.class);
+            Roles_empleado rol = JsonUtil.fromJson(readBody(req), Roles_empleado.class);
 
             if (rol.getId_rol() == null) {
                 resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-                resp.getWriter().write(
-                        gson.toJson(error("El campo id_rol es obligatorio para actualizar"))
-                );
+                sendError(resp, "El campo id_rol es obligatorio para actualizar");
                 return;
             }
 
-            Roles_empleado updated = rolesService.updateRol(rol);
-
-            resp.getWriter().write(
-                    gson.toJson(success(updated)));
+            Roles_empleado actualizado = rolesService.updateRol(rol);
+            sendSuccess(resp, actualizado);
 
         } catch (Exception ex) {
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            resp.getWriter().write(
-                    gson.toJson(error(ex.getMessage())));
+            sendError(resp, ex.getMessage());
         }
     }
 
     // ============================================================
-    // DELETE (eliminar rol)
+    // DELETE (eliminar)
     // ============================================================
     @Override
     protected void doDelete(HttpServletRequest req, HttpServletResponse resp)
@@ -137,24 +123,18 @@ public class RolesEmpleadoServlet extends HttpServlet {
 
             if (idParam == null) {
                 resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-                resp.getWriter().write(
-                        gson.toJson(error("Debe proporcionar ?id= para eliminar"))
-                );
+                sendError(resp, "Debe proporcionar ?id= para eliminar");
                 return;
             }
 
             Integer id = Integer.parseInt(idParam);
             rolesService.deleteRol(id);
 
-            resp.getWriter().write(
-                    gson.toJson(success("Rol eliminado correctamente"))
-            );
+            sendSuccess(resp, "Rol eliminado correctamente");
 
         } catch (Exception ex) {
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            resp.getWriter().write(
-                    gson.toJson(error(ex.getMessage()))
-            );
+            sendError(resp, ex.getMessage());
         }
     }
 
@@ -163,25 +143,41 @@ public class RolesEmpleadoServlet extends HttpServlet {
     // ============================================================
     private String readBody(HttpServletRequest req) throws IOException {
         StringBuilder sb = new StringBuilder();
-        BufferedReader br = req.getReader();
-        String line;
-        while ((line = br.readLine()) != null) {
-            sb.append(line);
+        try (BufferedReader br = req.getReader()) {
+            String line;
+            while ((line = br.readLine()) != null) sb.append(line);
         }
         return sb.toString();
     }
 
-    private Object success(Object data) {
-        return new Object() {
-            final boolean success = true;
-            final Object dataObj = data;
-        };
+    private void sendSuccess(HttpServletResponse resp, Object data) throws IOException {
+        resp.getWriter().write(JsonUtil.toJson(new Response(true, data)));
     }
 
-    private Object error(String message) {
-        return new Object() {
-            final boolean success = false;
-            final String error = message;
-        };
+    private void sendError(HttpServletResponse resp, String msg) throws IOException {
+        resp.getWriter().write(JsonUtil.toJson(new Response(false, new ErrorMsg(msg))));
+    }
+
+    private static class Response {
+        final boolean success;
+        final Object data;
+
+        Response(boolean success, Object data) {
+            this.success = success;
+            this.data = data;
+        }
+
+        public boolean isSuccess() { return success; }
+        public Object getData() { return data; }
+    }
+
+    private static class ErrorMsg {
+        final String error;
+
+        ErrorMsg(String error) {
+            this.error = error;
+        }
+
+        public String getError() { return error; }
     }
 }

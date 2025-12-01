@@ -1,6 +1,7 @@
 package com.example.crudxtart.models;
 
-
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 
 import java.util.ArrayList;
@@ -8,6 +9,7 @@ import java.util.List;
 
 @Entity
 @Table(name = "productos")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Producto
 {
 
@@ -32,6 +34,7 @@ public class Producto
     private boolean activo;
 
     @OneToMany(mappedBy = "Producto",cascade = CascadeType.ALL,orphanRemoval = true)
+    @JsonIgnore
     List<FacturaProducto> facturaProducto=new ArrayList<>();
 
     public  Producto()
