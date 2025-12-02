@@ -118,4 +118,33 @@ public class FacturaRepositoryImpl implements FacturaRepository {
         }
         return null;
     }
+    
+    @Override
+    public Long getSiguienteNumeroSecuencia() {
+        try {
+            Long count = em.createQuery(
+                "SELECT COUNT(f) FROM Factura f",
+                Long.class
+            ).getSingleResult();
+            return count + 1;
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            return 1L;
+        }
+    }
+    
+    @Override
+    public List<Factura> findFacturasByPresupuestoId(Integer presupuestoId) {
+        try {
+            return em.createQuery(
+                "SELECT f FROM Factura f WHERE f.notas LIKE :pattern",
+                Factura.class
+            )
+            .setParameter("pattern", "%presupuesto #" + presupuestoId + "%")
+            .getResultList();
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            return new java.util.ArrayList<>();
+        }
+    }
 }

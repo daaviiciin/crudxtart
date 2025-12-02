@@ -1,19 +1,24 @@
 package com.example.crudxtart.service;
 
+import java.time.LocalDate;
+import java.util.List;
+
+import com.example.crudxtart.models.Factura;
 import com.example.crudxtart.models.Pagos;
 import com.example.crudxtart.repository.PagosRepository;
+
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
-
-import java.time.LocalDate;
-import java.util.List;
 
 @ApplicationScoped
 public class PagosService
 {
     @Inject
     PagosRepository pagosRepository;
+    
+    @Inject
+    FacturaService facturaService;
 
     public List<Pagos> findAllPagos()
     {
@@ -26,10 +31,23 @@ public class PagosService
     }
 
 
+    @Transactional
     public Pagos createPagos(Pagos p)
     {
         validarpagos(p);
-        return  pagosRepository.createPagos(p);
+        Pagos pagoCreado = pagosRepository.createPagos(p);
+        
+        if (pagoCreado.getEstado() != null && 
+            pagoCreado.getEstado().equalsIgnoreCase("confirmado")) {
+            
+            Factura factura = pagoCreado.getFactura();
+            if (factura != null && !factura.getEstado().equalsIgnoreCase("pagada")) {
+                factura.setEstado("Pagada");
+                facturaService.updateFactura(factura);
+            }
+        }
+        
+        return pagoCreado;
     }
 
     public Pagos upLocalDatePagos(Pagos p)
@@ -44,13 +62,33 @@ public class PagosService
     }
 
     private void validarpagos(Pagos pago) {
-
         if (pago.getFactura() == null) {
             throw new IllegalArgumentException("El pago debe estar asociado a una factura.");
         }
 
         if (pago.getImporte() <= 0) {
             throw new IllegalArgumentException("El importe del pago debe ser mayor que 0.");
+        }
+
+        Factura factura = pago.getFactura();
+        if (factura != null) {
+            List<Pagos> pagosExistentes = pagosRepository.findPagosByFacturaId(factura.getId_factura());
+            Integer pagoIdActual = pago.getId_pago();
+            double totalPagado = pagosExistentes.stream()
+                .filter(p -> p.getEstado() != null && 
+                            p.getEstado().equalsIgnoreCase("confirmado") &&
+                            (pagoIdActual == null || !p.getId_pago().equals(pagoIdActual)))
+                .mapToDouble(Pagos::getImporte)
+                .sum();
+            
+            double totalPendiente = factura.getTotal() - totalPagado;
+            
+            if (pago.getImporte() > totalPendiente) {
+                throw new IllegalArgumentException(
+                    String.format("El importe del pago (%.2f) excede el total pendiente de la factura (%.2f)", 
+                        pago.getImporte(), totalPendiente)
+                );
+            }
         }
 
         if (pago.getMetodo_pago() != null) {
