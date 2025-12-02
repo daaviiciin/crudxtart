@@ -1,11 +1,24 @@
 package com.example.crudxtart.models;
 
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
+
+import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonGetter;
-import jakarta.persistence.*;
 
-import java.time.LocalDate;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
 
 @Entity
 @Table (name = "presupuestos")
@@ -32,10 +45,9 @@ public class Presupuestos
     @JsonIgnore
     private Cliente cliente_beneficiario;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_producto",nullable = false)
+    @OneToMany(mappedBy = "presupuesto", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @JsonIgnore
-    private Producto producto;
+    private List<PresupuestoProducto> presupuestoProductos = new ArrayList<>();
 
     @Column(name = "presupuesto",nullable = false)
     private double presupuesto;
@@ -106,12 +118,12 @@ public class Presupuestos
         this.fecha_apertura = fecha_apertura;
     }
 
-    public Producto getProducto() {
-        return producto;
+    public List<PresupuestoProducto> getPresupuestoProductos() {
+        return presupuestoProductos;
     }
 
-    public void setProducto(Producto producto) {
-        this.producto = producto;
+    public void setPresupuestoProductos(List<PresupuestoProducto> presupuestoProductos) {
+        this.presupuestoProductos = presupuestoProductos;
     }
 
     public Cliente getCliente_beneficiario() {
@@ -148,8 +160,22 @@ public class Presupuestos
         return cliente_beneficiario != null ? cliente_beneficiario.getId_cliente() : null;
     }
 
-    @JsonGetter("id_producto")
-    public Integer getId_producto() {
-        return producto != null ? producto.getId_producto() : null;
+    @JsonGetter("presupuestoProductos")
+    public List<java.util.Map<String, Object>> getPresupuestoProductosJson() {
+        if (presupuestoProductos == null) {
+            return new java.util.ArrayList<>();
+        }
+        java.util.List<java.util.Map<String, Object>> result = new java.util.ArrayList<>();
+        for (PresupuestoProducto pp : presupuestoProductos) {
+            java.util.Map<String, Object> map = new java.util.HashMap<>();
+            map.put("id_presupuesto_producto", pp.getId_presupuesto_producto());
+            map.put("id_producto", pp.getId_producto());
+            map.put("id_cliente_beneficiario", pp.getId_cliente_beneficiario());
+            map.put("cantidad", pp.getCantidad());
+            map.put("precio_unitario", pp.getPrecio_unitario());
+            map.put("subtotal", pp.getSubtotal());
+            result.add(map);
+        }
+        return result;
     }
 }

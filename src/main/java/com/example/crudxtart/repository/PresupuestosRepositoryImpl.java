@@ -21,11 +21,13 @@ public class PresupuestosRepositoryImpl implements PresupuestosRepository {
     @Transactional
     public List<Presupuestos> findAllPresupuestos() {
         return em.createQuery(
-                "SELECT p FROM Presupuestos p " +
+                "SELECT DISTINCT p FROM Presupuestos p " +
                         "LEFT JOIN FETCH p.empleado " +
                         "LEFT JOIN FETCH p.cliente_pagador " +
                         "LEFT JOIN FETCH p.cliente_beneficiario " +
-                        "LEFT JOIN FETCH p.producto ",
+                        "LEFT JOIN FETCH p.presupuestoProductos pp " +
+                        "LEFT JOIN FETCH pp.producto " +
+                        "LEFT JOIN FETCH pp.cliente_beneficiario ",
                 Presupuestos.class
         ).getResultList();
     }
@@ -36,11 +38,13 @@ public class PresupuestosRepositoryImpl implements PresupuestosRepository {
     public Presupuestos findPresupuestoById(Integer id) {
         try {
             return em.createQuery(
-                            "SELECT p FROM Presupuestos p " +
+                            "SELECT DISTINCT p FROM Presupuestos p " +
                                     "LEFT JOIN FETCH p.empleado " +
                                     "LEFT JOIN FETCH p.cliente_pagador " +
                                     "LEFT JOIN FETCH p.cliente_beneficiario " +
-                                    "LEFT JOIN FETCH p.producto " +
+                                    "LEFT JOIN FETCH p.presupuestoProductos pp " +
+                                    "LEFT JOIN FETCH pp.producto " +
+                                    "LEFT JOIN FETCH pp.cliente_beneficiario " +
                                     "WHERE p.id_Presupuesto = :id",
                             Presupuestos.class
                     )

@@ -1,8 +1,8 @@
 package com.example.crudxtart.repository;
 
-import com.example.crudxtart.models.Factura;
-
 import java.util.List;
+
+import com.example.crudxtart.models.Factura;
 
 public interface FacturaRepository {
 
@@ -17,4 +17,8 @@ public interface FacturaRepository {
     public Factura updateFactura(Factura f);
 
     public Factura createFactura(Factura f);
+    
+    public Long getSiguienteNumeroSecuencia();
+    
+    public List<Factura> findFacturasByPresupuestoId(Integer presupuestoId);
 }

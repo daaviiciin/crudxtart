@@ -11,6 +11,7 @@
         <class>com.example.crudxtart.models.FacturaProducto</class>
         <class>com.example.crudxtart.models.Producto</class>
         <class>com.example.crudxtart.models.Presupuestos</class>
+        <class>com.example.crudxtart.models.PresupuestoProducto</class>
         <class>com.example.crudxtart.models.Empleado</class>
         <class>com.example.crudxtart.models.Roles_empleado</class>
 

@@ -51,6 +51,24 @@ public class PagosRepositoryImpl implements PagosRepository
     }
 
     @Override
+    public List<Pagos> findPagosByFacturaId(Integer facturaId)
+    {
+        try {
+            return em.createQuery(
+                            "SELECT p FROM Pagos p " +
+                                    "LEFT JOIN FETCH p.factura f " +
+                                    "WHERE f.id_factura = :facturaId",
+                            Pagos.class
+                    )
+                    .setParameter("facturaId", facturaId)
+                    .getResultList();
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            return new java.util.ArrayList<>();
+        }
+    }
+
+    @Override
     public Pagos createPagos(Pagos p)
     {
         try
