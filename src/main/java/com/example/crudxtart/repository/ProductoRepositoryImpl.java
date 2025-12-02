@@ -46,13 +46,17 @@ public class ProductoRepositoryImpl implements ProductoRepository {
         {
             em.getTransaction().begin();
             em.persist(p);
+            em.flush(); // Forzar flush para obtener el ID generado
             em.getTransaction().commit();
             return p;
         }catch (Exception ex)
         {
-            em.getTransaction().rollback();
+            if (em.getTransaction().isActive()) {
+                em.getTransaction().rollback();
+            }
+            ex.printStackTrace();
+            throw new RuntimeException("Error al crear producto: " + ex.getMessage(), ex);
         }
-        return null;
     }
 
     @Override
@@ -83,10 +87,12 @@ public class ProductoRepositoryImpl implements ProductoRepository {
             em.getTransaction().commit();
         }catch (Exception ex)
         {
-            em.getTransaction().rollback();
+            if (em.getTransaction().isActive()) {
+                em.getTransaction().rollback();
+            }
+            ex.printStackTrace();
+            throw new RuntimeException("Error al eliminar producto: " + ex.getMessage(), ex);
         }
-
-
     }
 
     @Override
@@ -95,14 +101,17 @@ public class ProductoRepositoryImpl implements ProductoRepository {
         try
         {
             em.getTransaction().begin();
-            em.merge(p);
+            Producto actualizado = em.merge(p);
             em.getTransaction().commit();
-            return p;
+            return actualizado;
         }catch (Exception ex)
         {
-            em.getTransaction().rollback();
+            if (em.getTransaction().isActive()) {
+                em.getTransaction().rollback();
+            }
+            ex.printStackTrace();
+            throw new RuntimeException("Error al actualizar producto: " + ex.getMessage(), ex);
         }
-        return null;
     }
 
 

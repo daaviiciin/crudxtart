@@ -10,6 +10,10 @@ public interface ClienteRepository {
 
     public Cliente findClienteById( Integer id);
 
+    public Cliente findClienteByEmail(String email);
+
+    public List<Cliente> findClientesByFilters(String nombre, String email, String telefono);
+
     public void saveCliente(Cliente c);
 
     public void deletebyid(Integer id);

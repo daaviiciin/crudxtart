@@ -1,12 +1,12 @@
 package com.example.crudxtart.repository;
 
+import java.util.List;
+
 import com.example.crudxtart.models.FacturaProducto;
+
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
-import jakarta.transaction.Transactional;
-
-import java.util.List;
 
 @ApplicationScoped
 public class FacturaProductoRepositoryImpl implements FacturaProductoRepository {
@@ -18,8 +18,12 @@ public class FacturaProductoRepositoryImpl implements FacturaProductoRepository 
 
     @Override
     public List<FacturaProducto> findAllFacturaProductos() {
-        return em.createQuery("SELECT fp FROM FacturaProducto fp", FacturaProducto.class)
-                .getResultList();
+        return em.createQuery(
+                "SELECT fp FROM FacturaProducto fp " +
+                        "LEFT JOIN FETCH fp.Producto " +
+                        "LEFT JOIN FETCH fp.factura",
+                FacturaProducto.class
+        ).getResultList();
     }
 
     @Override
@@ -73,18 +77,18 @@ public class FacturaProductoRepositoryImpl implements FacturaProductoRepository 
     @Override
 
     public void deletebyid(Integer id) {
-       try
-       {
-           em.getTransaction().begin();
-           FacturaProducto fp = em.find(FacturaProducto.class, id);
-           if (fp != null) {
-               em.remove(fp);
-           }
-           em.getTransaction().commit();
-       }catch(Exception ex)
-       {
-           em.getTransaction().rollback();
-       }
+        try
+        {
+            em.getTransaction().begin();
+            FacturaProducto fp = em.find(FacturaProducto.class, id);
+            if (fp != null) {
+                em.remove(fp);
+            }
+            em.getTransaction().commit();
+        }catch(Exception ex)
+        {
+            em.getTransaction().rollback();
+        }
 
     }
 

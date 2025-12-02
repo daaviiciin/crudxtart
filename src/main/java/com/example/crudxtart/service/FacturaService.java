@@ -1,13 +1,13 @@
 package com.example.crudxtart.service;
 
-import com.example.crudxtart.models.Factura;
-import com.example.crudxtart.repository.FacturaRepository;
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
-
-import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
+
+import com.example.crudxtart.models.Factura;
+import com.example.crudxtart.repository.FacturaRepository;
+
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 
 @ApplicationScoped
 public class FacturaService {
@@ -68,8 +68,10 @@ public class FacturaService {
             throw new IllegalArgumentException("La fecha de emisión es obligatoria.");
         }
 
-        if (factura.getFecha_emision().isAfter(hoy)) {
-            throw new IllegalArgumentException("La fecha de emisión no puede ser futura.");
+        LocalDate fechaMaxima = hoy.plusYears(1);
+
+        if (factura.getFecha_emision().isAfter(fechaMaxima)) {
+            throw new IllegalArgumentException("La fecha de emisión no puede ser más de 1 año en el futuro.");
         }
     }
 }
