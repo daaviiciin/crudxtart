@@ -17,6 +17,7 @@ public class ClienteRepositoryImpl implements ClienteRepository {
     @Inject
     EntityManager em;
 
+
     public ClienteRepositoryImpl() {}
 
     // ============================================================
