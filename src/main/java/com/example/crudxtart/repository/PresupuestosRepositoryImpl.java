@@ -18,7 +18,6 @@ public class PresupuestosRepositoryImpl implements PresupuestosRepository {
     public PresupuestosRepositoryImpl() {}
 
     @Override
-    @Transactional
     public List<Presupuestos> findAllPresupuestos() {
         return em.createQuery(
                 "SELECT DISTINCT p FROM Presupuestos p " +
@@ -34,7 +33,6 @@ public class PresupuestosRepositoryImpl implements PresupuestosRepository {
 
 
     @Override
-    @Transactional
     public Presupuestos findPresupuestoById(Integer id) {
         try {
             return em.createQuery(
@@ -63,7 +61,7 @@ public class PresupuestosRepositoryImpl implements PresupuestosRepository {
         {
             em.getTransaction().begin();
             em.persist(p);
-            em.flush(); // Forzar flush para obtener el ID generado
+            em.flush();
             em.getTransaction().commit();
             return p;
         }catch (Exception ex)
@@ -77,7 +75,6 @@ public class PresupuestosRepositoryImpl implements PresupuestosRepository {
     }
 
     @Override
-
     public void savePresupuesto(Presupuestos p)
     {
         try

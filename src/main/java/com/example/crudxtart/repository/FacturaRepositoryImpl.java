@@ -57,7 +57,7 @@ public class FacturaRepositoryImpl implements FacturaRepository {
         {
             em.getTransaction().begin();
             em.persist(f);
-            em.flush(); // Forzar la generación del ID
+            em.flush();
             em.getTransaction().commit();
             return f;
         }catch(Exception ex)
@@ -66,8 +66,8 @@ public class FacturaRepositoryImpl implements FacturaRepository {
                 em.getTransaction().rollback();
             }
             ex.printStackTrace();
+            throw new RuntimeException("Error al actualizar empleado: " + ex.getMessage(), ex);
         }
-        return null;
     }
 
     @Override
@@ -78,10 +78,15 @@ public class FacturaRepositoryImpl implements FacturaRepository {
         {
             em.getTransaction().begin();
             em.persist(f);
+            em.flush();
             em.getTransaction().commit();
         }catch (Exception ex)
         {
-            em.getTransaction().rollback();
+            if (em.getTransaction().isActive()) {
+                em.getTransaction().rollback();
+            }
+            ex.printStackTrace();
+            throw new RuntimeException("Error al actualizar empleado: " + ex.getMessage(), ex);
         }
     }
 
@@ -99,7 +104,11 @@ public class FacturaRepositoryImpl implements FacturaRepository {
 
         }catch (Exception ex)
         {
-            em.getTransaction().rollback();
+            if (em.getTransaction().isActive()) {
+                em.getTransaction().rollback();
+            }
+            ex.printStackTrace();
+            throw new RuntimeException("Error al actualizar empleado: " + ex.getMessage(), ex);
         }
     }
 
@@ -114,9 +123,13 @@ public class FacturaRepositoryImpl implements FacturaRepository {
             return f;
         }catch(Exception ex)
         {
-            em.getTransaction().rollback();
+            if (em.getTransaction().isActive()) {
+                em.getTransaction().rollback();
+            }
+            ex.printStackTrace();
+            throw new RuntimeException("Error al actualizar empleado: " + ex.getMessage(), ex);
         }
-        return null;
+
     }
     
     @Override

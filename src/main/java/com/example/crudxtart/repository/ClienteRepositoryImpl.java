@@ -23,7 +23,6 @@ public class ClienteRepositoryImpl implements ClienteRepository {
     // FIND ALL
     // ============================================================
     @Override
-    @Transactional
     public List<Cliente> findAllClientes() {
         return em.createQuery(
                 "SELECT c FROM Cliente c LEFT JOIN FETCH c.empleado_responsable",
@@ -36,7 +35,6 @@ public class ClienteRepositoryImpl implements ClienteRepository {
     // FIND BY ID
     // ============================================================
     @Override
-    @Transactional
     public Cliente findClienteById(Integer id) {
         try {
             return em.createQuery(
@@ -55,7 +53,6 @@ public class ClienteRepositoryImpl implements ClienteRepository {
     // FIND BY EMAIL
     // ============================================================
     @Override
-    @Transactional
     public Cliente findClienteByEmail(String email) {
         try {
             return em.createQuery(
@@ -74,7 +71,6 @@ public class ClienteRepositoryImpl implements ClienteRepository {
     // FIND WITH FILTERS
     // ============================================================
     @Override
-    @Transactional
     public List<Cliente> findClientesByFilters(String nombre, String email, String telefono) {
         try {
             StringBuilder sb = new StringBuilder(
@@ -138,8 +134,18 @@ public class ClienteRepositoryImpl implements ClienteRepository {
     @Override
     public void saveCliente(Cliente c) {
         try {
+            em.getTransaction().begin();
             em.persist(c);
-        } catch (Exception ignored) {}
+            em.flush();
+            em.getTransaction().commit();
+        } catch (Exception ex) {
+            if (em.getTransaction().isActive()) {
+                em.getTransaction().rollback();
+            }
+            ex.printStackTrace();
+            throw new RuntimeException("Error al actualizar empleado: " + ex.getMessage(), ex);
+
+        }
     }
 
     // ============================================================

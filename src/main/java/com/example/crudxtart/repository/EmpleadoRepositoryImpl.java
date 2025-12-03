@@ -52,7 +52,6 @@ public class EmpleadoRepositoryImpl implements EmpleadoRepository {
     // FIND BY EMAIL
     // ============================================================
     @Override
-    @Transactional
     public Empleado findEmpleadoByEmail(String email) {
         try {
             return em.createQuery(
@@ -96,11 +95,19 @@ public class EmpleadoRepositoryImpl implements EmpleadoRepository {
     // SAVE (alias persist)
     // ============================================================
     @Override
-    @Transactional
     public void saveEmpleado(Empleado e) {
         try {
+            em.getTransaction().begin();
             em.persist(e);
-        } catch (Exception ignored) {}
+            em.flush();
+            em.getTransaction().commit();
+        } catch (Exception ex) {
+            if (em.getTransaction().isActive()) {
+                em.getTransaction().rollback();
+            }
+            ex.printStackTrace();
+            throw new RuntimeException("Error al actualizar empleado: " + ex.getMessage(), ex);
+        }
     }
 
     // ============================================================

@@ -75,7 +75,7 @@ public class PagosRepositoryImpl implements PagosRepository
         {
             em.getTransaction().begin();
             em.persist(p);
-            em.flush(); // Forzar la generación del ID
+            em.flush();
             em.getTransaction().commit();
 
         }catch(Exception ex)
@@ -84,6 +84,7 @@ public class PagosRepositoryImpl implements PagosRepository
                 em.getTransaction().rollback();
             }
             ex.printStackTrace();
+            throw new RuntimeException("Error al actualizar empleado: " + ex.getMessage(), ex);
         }
         return p;
     }
@@ -94,16 +95,20 @@ public class PagosRepositoryImpl implements PagosRepository
         try {
             em.getTransaction().begin();
             em.persist(p);
+            em.flush();
             em.getTransaction().commit();
         }catch (Exception ex)
         {
+            if (em.getTransaction().isActive()) {
+                em.getTransaction().rollback();
+            }
             ex.printStackTrace();
+            throw new RuntimeException("Error al actualizar empleado: " + ex.getMessage(), ex);
         }
 
     }
 
     @Override
-    @Transactional
     public void deletebyid( Integer  id)
     {
         try
@@ -118,13 +123,16 @@ public class PagosRepositoryImpl implements PagosRepository
             return;
         }catch (Exception ex)
         {
+            if (em.getTransaction().isActive()) {
+                em.getTransaction().rollback();
+            }
             ex.printStackTrace();
+            throw new RuntimeException("Error al actualizar empleado: " + ex.getMessage(), ex);
         }
 
     }
 
     @Override
-    @Transactional
     public Pagos upLocalDatePagos(Pagos p)
     {
         try
@@ -134,9 +142,12 @@ public class PagosRepositoryImpl implements PagosRepository
             em.getTransaction().commit();
 
         }catch(Exception ex)
-
         {
+            if (em.getTransaction().isActive()) {
+                em.getTransaction().rollback();
+            }
             ex.printStackTrace();
+            throw new RuntimeException("Error al actualizar empleado: " + ex.getMessage(), ex);
         }
         return p;
     }

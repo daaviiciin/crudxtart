@@ -38,13 +38,16 @@ public class FacturaProductoRepositoryImpl implements FacturaProductoRepository 
         }
         catch(Exception ex)
         {
-            em.getTransaction().rollback();
+            if (em.getTransaction().isActive()) {
+                em.getTransaction().rollback();
+            }
+            ex.printStackTrace();
+            throw new RuntimeException("Error al actualizar empleado: " + ex.getMessage(), ex);
         }
-        return null;
+
     }
 
     @Override
-
     public FacturaProducto createFacturaProducto(FacturaProducto fp)
     {
         try
@@ -55,9 +58,13 @@ public class FacturaProductoRepositoryImpl implements FacturaProductoRepository 
             return fp;
         }catch(Exception ex)
         {
-            em.getTransaction().rollback();
+            if (em.getTransaction().isActive()) {
+                em.getTransaction().rollback();
+            }
+            ex.printStackTrace();
+            throw new RuntimeException("Error al actualizar empleado: " + ex.getMessage(), ex);
         }
-        return null;
+
     }
 
     @Override
@@ -70,12 +77,15 @@ public class FacturaProductoRepositoryImpl implements FacturaProductoRepository 
             em.getTransaction().commit();
         }catch(Exception ex)
         {
-            em.getTransaction().rollback();
+            if (em.getTransaction().isActive()) {
+                em.getTransaction().rollback();
+            }
+            ex.printStackTrace();
+            throw new RuntimeException("Error al actualizar empleado: " + ex.getMessage(), ex);
         }
     }
 
     @Override
-
     public void deletebyid(Integer id) {
         try
         {
@@ -87,13 +97,16 @@ public class FacturaProductoRepositoryImpl implements FacturaProductoRepository 
             em.getTransaction().commit();
         }catch(Exception ex)
         {
-            em.getTransaction().rollback();
+            if (em.getTransaction().isActive()) {
+                em.getTransaction().rollback();
+            }
+            ex.printStackTrace();
+            throw new RuntimeException("Error al actualizar empleado: " + ex.getMessage(), ex);
         }
 
     }
 
     @Override
-
     public FacturaProducto updateFacturaProducto(FacturaProducto fp)
     {
         try
@@ -104,8 +117,12 @@ public class FacturaProductoRepositoryImpl implements FacturaProductoRepository 
             return fp;
         }catch (Exception ex)
         {
-            em.getTransaction().rollback();
+            if (em.getTransaction().isActive()) {
+                em.getTransaction().rollback();
+            }
+            ex.printStackTrace();
+            throw new RuntimeException("Error al actualizar empleado: " + ex.getMessage(), ex);
         }
-        return null;
+
     }
 }
