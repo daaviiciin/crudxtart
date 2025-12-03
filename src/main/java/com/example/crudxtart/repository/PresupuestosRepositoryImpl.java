@@ -84,10 +84,15 @@ public class PresupuestosRepositoryImpl implements PresupuestosRepository {
         {
             em.getTransaction().begin();
             em.merge(p);
+            em.flush();
             em.getTransaction().commit();
         }catch (Exception ex)
         {
-            em.getTransaction().rollback();
+            if (em.getTransaction().isActive()) {
+                em.getTransaction().rollback();
+            }
+            ex.printStackTrace();
+            throw new RuntimeException("Error al crear presupuesto: " + ex.getMessage(), ex);
         }
     }
 
