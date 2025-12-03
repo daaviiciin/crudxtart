@@ -186,5 +186,6 @@ public class ClienteRepositoryImpl implements ClienteRepository {
             ex.printStackTrace();
             throw new RuntimeException("Error al actualizar cliente: " + ex.getMessage(), ex);
         }
+
     }
 }
