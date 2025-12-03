@@ -18,15 +18,13 @@ import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.time.format.DateTimeFormatter;
 import java.time.YearMonth;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
+import java.util.concurrent.*;
 import java.util.stream.Collectors;
 
 @WebServlet("/informes/*")
 public class InformesServlet extends HttpServlet {
+
 
     @Inject
     private FacturaService facturaService;
@@ -38,13 +36,14 @@ public class InformesServlet extends HttpServlet {
     private FacturaProductoService facturaProductoService;
 
     private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+    private final ExecutorService executor = Executors.newFixedThreadPool(5);
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         resp.setContentType("application/json");
         resp.setCharacterEncoding("UTF-8");
 
-        String path = req.getPathInfo(); // ej: "/ventas-empleado"
+        String path = req.getPathInfo();
         if (path == null || path.equals("/")) {
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             sendError(resp, "Debe especificar el tipo de informe en la URL.");
@@ -56,59 +55,109 @@ public class InformesServlet extends HttpServlet {
 
         try {
             switch (path) {
+
                 case "/ventas-empleado":
-                    handleVentasPorEmpleado(resp, desde, hasta);
+                    ejecutarConThread(() -> {
+                        try {
+                            handleVentasPorEmpleado(resp, desde, hasta);
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }, resp);
                     break;
+
                 case "/presupuestos-estado":
-                    handleEstadoPresupuestos(resp, desde, hasta);
+                    ejecutarConExecutor(() -> {
+                        try {
+                            handleEstadoPresupuestos(resp, desde, hasta);
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }, resp);
                     break;
+
                 case "/facturacion-mensual":
-                    handleFacturacionMensual(resp, desde, hasta);
+                    ejecutarConExecutor(() -> {
+                        try {
+                            handleFacturacionMensual(resp, desde, hasta);
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }, resp);
                     break;
+
                 case "/ventas-producto":
-                    handleVentasPorProducto(resp, desde, hasta);
+                    ejecutarConExecutor(() -> {
+                        try {
+                            handleVentasPorProducto(resp, desde, hasta);
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }, resp);
                     break;
+
                 case "/ratio-conversion":
-                    handleRatioConversion(resp, desde, hasta);
+                    ejecutarConExecutor(() -> {
+                        try {
+                            handleRatioConversion(resp, desde, hasta);
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }, resp);
                     break;
+
                 default:
                     resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
                     sendError(resp, "Informe no soportado: " + path);
             }
+
         } catch (Exception ex) {
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             sendError(resp, ex.getMessage());
         }
     }
 
-    // ---------------------------------------------------------------------
-    // /informes/ventas-empleado
-    // ---------------------------------------------------------------------
-    private void handleVentasPorEmpleado(HttpServletResponse resp,
-                                            LocalDate desde,
-                                            LocalDate hasta) throws IOException {
+    private void ejecutarConThread(Runnable tarea, HttpServletResponse resp) throws IOException {
+        Thread hilo = new Thread(() -> {
+            try {
+                tarea.run();
+            } catch (Exception e) {
+                e.printStackTrace();
+                try { sendError(resp, e.getMessage()); } catch (IOException ex) {}
+            }
+        });
+        hilo.start();
+        try {
+            hilo.join(); // Espera a que termine el hilo para enviar JSON real
+        } catch (InterruptedException e) {
+            sendError(resp, "Error ejecutando hilo: " + e.getMessage());
+        }
+    }
 
+    private void ejecutarConExecutor(Runnable tarea, HttpServletResponse resp) throws IOException {
+        Future<?> future = executor.submit(tarea);
+        try {
+            future.get(); // Espera a que termine la tarea antes de enviar JSON
+        } catch (InterruptedException | ExecutionException e) {
+            sendError(resp, "Error ejecutando tarea: " + e.getMessage());
+        }
+    }
+
+    // ----------------------- HANDLE INFORMES ------------------------
+    private void handleVentasPorEmpleado(HttpServletResponse resp, LocalDate desde, LocalDate hasta) throws IOException {
         List<Factura> facturas = facturaService.findAllFacturas();
-
-        // Filtro por fechas si se proporcionan
         if (desde != null) {
-            facturas = facturas.stream()
-                    .filter(f -> f.getFecha_emision() != null && !f.getFecha_emision().isBefore(desde))
-                    .collect(Collectors.toList());
+            facturas = facturas.stream().filter(f -> f.getFecha_emision() != null && !f.getFecha_emision().isBefore(desde)).collect(Collectors.toList());
         }
         if (hasta != null) {
-            facturas = facturas.stream()
-                    .filter(f -> f.getFecha_emision() != null && !f.getFecha_emision().isAfter(hasta))
-                    .collect(Collectors.toList());
+            facturas = facturas.stream().filter(f -> f.getFecha_emision() != null && !f.getFecha_emision().isAfter(hasta)).collect(Collectors.toList());
         }
 
         Map<String, Double> acumulado = new HashMap<>();
-
         for (Factura f : facturas) {
             if (f.getEmpleado() == null) continue;
             String nombre = safeUpperFirst(f.getEmpleado().getNombre());
-            double total = f.getTotal();
-            acumulado.merge(nombre, total, Double::sum);
+            acumulado.merge(nombre, f.getTotal(), Double::sum);
         }
 
         List<Map<String, Object>> resultado = new ArrayList<>();
@@ -122,54 +171,22 @@ public class InformesServlet extends HttpServlet {
         sendSuccess(resp, resultado);
     }
 
-    // ---------------------------------------------------------------------
-    // /informes/presupuestos-estado
-    // ---------------------------------------------------------------------
-    private void handleEstadoPresupuestos(HttpServletResponse resp,
-                                            LocalDate desde,
-                                            LocalDate hasta) throws IOException {
-
+    private void handleEstadoPresupuestos(HttpServletResponse resp, LocalDate desde, LocalDate hasta) throws IOException {
         List<Presupuestos> lista = presupuestosService.findAllPresupuestos();
+        if (desde != null) lista = lista.stream().filter(p -> p.getFecha_apertura() != null && !p.getFecha_apertura().isBefore(desde)).collect(Collectors.toList());
+        if (hasta != null) lista = lista.stream().filter(p -> p.getFecha_apertura() != null && !p.getFecha_apertura().isAfter(hasta)).collect(Collectors.toList());
 
-        if (desde != null) {
-            lista = lista.stream()
-                    .filter(p -> p.getFecha_apertura() != null && !p.getFecha_apertura().isBefore(desde))
-                    .collect(Collectors.toList());
-        }
-        if (hasta != null) {
-            lista = lista.stream()
-                    .filter(p -> p.getFecha_apertura() != null && !p.getFecha_apertura().isAfter(hasta))
-                    .collect(Collectors.toList());
-        }
-
-        // Normalizar a solo 3 estados: APROBADO, PENDIENTE, RECHAZADO
         Map<String, Integer> conteo = new HashMap<>();
-        conteo.put("APROBADO", 0);
-        conteo.put("PENDIENTE", 0);
-        conteo.put("RECHAZADO", 0);
+        conteo.put("APROBADO", 0); conteo.put("PENDIENTE", 0); conteo.put("RECHAZADO", 0);
 
         for (Presupuestos p : lista) {
             String raw = p.getEstado() != null ? p.getEstado().trim().toLowerCase(Locale.ROOT) : "";
             String estadoNorm;
             switch (raw) {
-                case "aprobado":
-                case "aceptado":
-                case "cerrado":
-                    estadoNorm = "APROBADO";
-                    break;
-                case "pendiente":
-                case "en_proceso":
-                case "en proceso":
-                    estadoNorm = "PENDIENTE";
-                    break;
-                case "rechazado":
-                case "denegado":
-                    estadoNorm = "RECHAZADO";
-                    break;
-                default:
-                    // Estados desconocidos se cuentan como PENDIENTE
-                    estadoNorm = "PENDIENTE";
-                    break;
+                case "aprobado": case "aceptado": case "cerrado": estadoNorm = "APROBADO"; break;
+                case "pendiente": case "en_proceso": case "en proceso": estadoNorm = "PENDIENTE"; break;
+                case "rechazado": case "denegado": estadoNorm = "RECHAZADO"; break;
+                default: estadoNorm = "PENDIENTE";
             }
             conteo.merge(estadoNorm, 1, Integer::sum);
         }
@@ -177,67 +194,34 @@ public class InformesServlet extends HttpServlet {
         sendSuccess(resp, conteo);
     }
 
-    // ---------------------------------------------------------------------
-    // /informes/facturacion-mensual
-    // ---------------------------------------------------------------------
-    private void handleFacturacionMensual(HttpServletResponse resp,
-                                            LocalDate desde,
-                                            LocalDate hasta) throws IOException {
-
+    private void handleFacturacionMensual(HttpServletResponse resp, LocalDate desde, LocalDate hasta) throws IOException {
         List<Factura> facturas = facturaService.findAllFacturas();
-
-        if (desde != null) {
-            facturas = facturas.stream()
-                    .filter(f -> f.getFecha_emision() != null && !f.getFecha_emision().isBefore(desde))
-                    .collect(Collectors.toList());
-        }
-        if (hasta != null) {
-            facturas = facturas.stream()
-                    .filter(f -> f.getFecha_emision() != null && !f.getFecha_emision().isAfter(hasta))
-                    .collect(Collectors.toList());
-        }
+        if (desde != null) facturas = facturas.stream().filter(f -> f.getFecha_emision() != null && !f.getFecha_emision().isBefore(desde)).collect(Collectors.toList());
+        if (hasta != null) facturas = facturas.stream().filter(f -> f.getFecha_emision() != null && !f.getFecha_emision().isAfter(hasta)).collect(Collectors.toList());
 
         Map<String, Double> porMes = new HashMap<>();
-
         for (Factura f : facturas) {
             if (f.getFecha_emision() == null) continue;
-            YearMonth ym = YearMonth.from(f.getFecha_emision());
-            String clave = ym.toString(); // "YYYY-MM"
+            String clave = YearMonth.from(f.getFecha_emision()).toString();
             porMes.merge(clave, f.getTotal(), Double::sum);
         }
 
         sendSuccess(resp, porMes);
     }
 
-    // ---------------------------------------------------------------------
-    // /informes/ventas-producto
-    // ---------------------------------------------------------------------
-    private void handleVentasPorProducto(HttpServletResponse resp,
-                                            LocalDate desde,
-                                            LocalDate hasta) throws IOException {
-
+    private void handleVentasPorProducto(HttpServletResponse resp, LocalDate desde, LocalDate hasta) throws IOException {
         List<FacturaProducto> items = facturaProductoService.findAllFacturaProductos();
-
         Map<String, Double> acumulado = new HashMap<>();
 
         for (FacturaProducto fp : items) {
-            // Filtrar por fecha de factura si se proporcionan fechas
             Factura factura = fp.getFactura();
-            if (factura != null && (desde != null || hasta != null)) {
+            if (factura != null) {
                 LocalDate fecha = factura.getFecha_emision();
-                if (fecha == null) continue;
-                if (desde != null && fecha.isBefore(desde)) continue;
-                if (hasta != null && fecha.isAfter(hasta)) continue;
+                if ((desde != null && fecha.isBefore(desde)) || (hasta != null && fecha.isAfter(hasta))) continue;
             }
-
             if (fp.getProducto() == null) continue;
             String nombre = safeUpperFirst(fp.getProducto().getNombre());
-
-            double subtotal = fp.getSubtotal();
-            if (subtotal == 0) {
-                subtotal = fp.getCantidad() * fp.getprecio_unitario();
-            }
-
+            double subtotal = fp.getSubtotal() == 0 ? fp.getCantidad() * fp.getprecio_unitario() : fp.getSubtotal();
             acumulado.merge(nombre, subtotal, Double::sum);
         }
 
@@ -252,47 +236,17 @@ public class InformesServlet extends HttpServlet {
         sendSuccess(resp, resultado);
     }
 
-    // ---------------------------------------------------------------------
-    // /informes/ratio-conversion
-    // ---------------------------------------------------------------------
-    private void handleRatioConversion(HttpServletResponse resp,
-                                        LocalDate desde,
-                                        LocalDate hasta) throws IOException {
-
+    private void handleRatioConversion(HttpServletResponse resp, LocalDate desde, LocalDate hasta) throws IOException {
         List<Presupuestos> lista = presupuestosService.findAllPresupuestos();
-
-        if (desde != null) {
-            lista = lista.stream()
-                    .filter(p -> p.getFecha_apertura() != null && !p.getFecha_apertura().isBefore(desde))
-                    .collect(Collectors.toList());
-        }
-        if (hasta != null) {
-            lista = lista.stream()
-                    .filter(p -> p.getFecha_apertura() != null && !p.getFecha_apertura().isAfter(hasta))
-                    .collect(Collectors.toList());
-        }
-
-        int convertidos = 0;
-        int rechazados = 0;
-        int pendientes = 0;
-        int otros = 0;
+        int convertidos=0, rechazados=0, pendientes=0, otros=0;
 
         for (Presupuestos p : lista) {
-            String estado = p.getEstado() != null ? p.getEstado().toLowerCase(Locale.ROOT) : "";
-            switch (estado) {
-                case "aprobado":
-                case "aceptado":
-                    convertidos++;
-                    break;
-                case "rechazado":
-                    rechazados++;
-                    break;
-                case "pendiente":
-                    pendientes++;
-                    break;
-                default:
-                    otros++;
-                    break;
+            String estado = p.getEstado()!=null ? p.getEstado().toLowerCase(Locale.ROOT) : "";
+            switch(estado){
+                case "aprobado": case "aceptado": convertidos++; break;
+                case "rechazado": rechazados++; break;
+                case "pendiente": pendientes++; break;
+                default: otros++;
             }
         }
 
@@ -305,56 +259,13 @@ public class InformesServlet extends HttpServlet {
         sendSuccess(resp, resultado);
     }
 
-    // ---------------------------------------------------------------------
-    // Helpers
-    // ---------------------------------------------------------------------
+    // ------------------------- HELPERS --------------------------
+    private LocalDate parseDate(String raw){ if(raw==null||raw.trim().isEmpty()) return null; try{ return LocalDate.parse(raw.trim(),DATE_FMT);}catch(DateTimeParseException e){return null;} }
+    private String safeUpperFirst(String value){ if(value==null) return "Desconocido"; String trimmed=value.trim(); return trimmed.isEmpty()?"Desconocido":trimmed.substring(0,1).toUpperCase()+trimmed.substring(1);}
+    private void sendSuccess(HttpServletResponse resp,Object data)throws IOException{resp.getWriter().write(JsonUtil.toJson(new Response(true,data)));}
+    private void sendError(HttpServletResponse resp,String msg)throws IOException{resp.getWriter().write(JsonUtil.toJson(new Response(false,new ErrorMsg(msg))));}
+    private static class Response{final boolean success; final Object data; Response(boolean success,Object data){this.success=success;this.data=data;}}
+    private static class ErrorMsg{final String error; ErrorMsg(String error){this.error=error;}}
 
-    private LocalDate parseDate(String raw) {
-        if (raw == null || raw.trim().isEmpty()) return null;
-        try {
-            return LocalDate.parse(raw.trim(), DATE_FMT);
-        } catch (DateTimeParseException e) {
-            return null;
-        }
-    }
-
-    private String safeUpperFirst(String value) {
-        if (value == null) return "Desconocido";
-        String trimmed = value.trim();
-        if (trimmed.isEmpty()) return "Desconocido";
-        return trimmed.substring(0, 1).toUpperCase() + trimmed.substring(1);
-    }
-
-    private void sendSuccess(HttpServletResponse resp, Object data) throws IOException {
-        resp.getWriter().write(JsonUtil.toJson(new Response(true, data)));
-    }
-
-    private void sendError(HttpServletResponse resp, String msg) throws IOException {
-        resp.getWriter().write(JsonUtil.toJson(new Response(false, new ErrorMsg(msg))));
-    }
-
-    private static class Response {
-        final boolean success;
-        final Object data;
-
-        Response(boolean success, Object data) {
-            this.success = success;
-            this.data = data;
-        }
-
-        public boolean isSuccess() { return success; }
-        public Object getData() { return data; }
-    }
-
-    private static class ErrorMsg {
-        final String error;
-
-        ErrorMsg(String error) {
-            this.error = error;
-        }
-
-        public String getError() { return error; }
-    }
 }
-
 
