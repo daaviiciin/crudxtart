@@ -68,32 +68,32 @@ public class FacturaService {
     private String determinarEstado(LocalDate fechaEmision) {
         LocalDate hoy = LocalDate.now();
         if (fechaEmision.isAfter(hoy)) {
-            return "Pendiente";
+            return "PENDIENTE";
         } else {
-            return "Emitida";
+            return "EMITIDA";
         }
     }
     
     private void actualizarEstadoAutomatico(Factura factura) {
         LocalDate hoy = LocalDate.now();
         LocalDate fechaEmision = factura.getFecha_emision();
-        String estadoActual = factura.getEstado() != null ? factura.getEstado().toLowerCase() : "";
+        String estadoActual = factura.getEstado() != null ? factura.getEstado().toUpperCase() : "";
 
-        if (estadoActual.equals("pendiente") && !fechaEmision.isAfter(hoy)) {
-            factura.setEstado("Emitida");
-            estadoActual = "emitida";
+        if (estadoActual.equals("PENDIENTE") && !fechaEmision.isAfter(hoy)) {
+            factura.setEstado("EMITIDA");
+            estadoActual = "EMITIDA";
         }
         
-        if (estadoActual.equals("emitida")) {
+        if (estadoActual.equals("EMITIDA")) {
             LocalDate finMesFacturacion = fechaEmision.withDayOfMonth(fechaEmision.lengthOfMonth());
             if (hoy.isAfter(finMesFacturacion)) {
                 List<Pagos> pagos = pagosRepository.findPagosByFacturaId(factura.getId_factura());
-                boolean tienePagosConfirmados = pagos.stream()
+                boolean tienePagosPagados = pagos.stream()
                     .anyMatch(p -> p.getEstado() != null && 
-                        p.getEstado().equalsIgnoreCase("confirmado"));
+                        p.getEstado().equalsIgnoreCase("PAGADA"));
                 
-                if (!tienePagosConfirmados) {
-                    factura.setEstado("No pagada");
+                if (!tienePagosPagados) {
+                    factura.setEstado("VENCIDA");
                 }
             }
         }
@@ -101,11 +101,10 @@ public class FacturaService {
     
     private void validarTransicionEstadoFactura(String estadoAnterior, String estadoNuevo) {
         Map<String, List<String>> transicionesValidas = new HashMap<>();
-        transicionesValidas.put("Pendiente", List.of("Emitida", "Cancelada"));
-        transicionesValidas.put("Emitida", List.of("Pagada", "No pagada", "Cancelada"));
-        transicionesValidas.put("Pagada", List.of());
-        transicionesValidas.put("No pagada", List.of("Pagada", "Cancelada"));
-        transicionesValidas.put("Cancelada", List.of());
+        transicionesValidas.put("PENDIENTE", List.of("EMITIDA", "VENCIDA"));
+        transicionesValidas.put("EMITIDA", List.of("PAGADA", "VENCIDA"));
+        transicionesValidas.put("PAGADA", List.of());
+        transicionesValidas.put("VENCIDA", List.of("PAGADA"));
         
         String estadoAnteriorNorm = normalizarEstadoFactura(estadoAnterior);
         String estadoNuevoNorm = normalizarEstadoFactura(estadoNuevo);
@@ -123,19 +122,18 @@ public class FacturaService {
         if (estado == null || estado.trim().isEmpty()) {
             return "";
         }
-        String estadoLower = estado.toLowerCase().trim();
-        if (estadoLower.equals("pendiente")) {
-            return "Pendiente";
-        } else if (estadoLower.equals("emitida")) {
-            return "Emitida";
-        } else if (estadoLower.equals("pagada")) {
-            return "Pagada";
-        } else if (estadoLower.equals("no pagada") || estadoLower.equals("nopagada")) {
-            return "No pagada";
-        } else if (estadoLower.equals("cancelada")) {
-            return "Cancelada";
+        String estadoUpper = estado.toUpperCase().trim();
+        // Mapear estados antiguos a nuevos
+        if (estadoUpper.equals("PENDIENTE")) {
+            return "PENDIENTE";
+        } else if (estadoUpper.equals("EMITIDA")) {
+            return "EMITIDA";
+        } else if (estadoUpper.equals("PAGADA")) {
+            return "PAGADA";
+        } else if (estadoUpper.equals("VENCIDA") || estadoUpper.equals("NO PAGADA") || estadoUpper.equals("NOPAGADA")) {
+            return "VENCIDA";
         }
-        return estado;
+        return estadoUpper;
     }
 
     public void deleteFactura(int id) {
@@ -155,7 +153,7 @@ public class FacturaService {
         List<Pagos> pagos = pagosRepository.findPagosByFacturaId(facturaId);
         double totalPagado = pagos.stream()
             .filter(p -> p.getEstado() != null && 
-                        p.getEstado().equalsIgnoreCase("confirmado"))
+                        p.getEstado().equalsIgnoreCase("PAGADA"))
             .mapToDouble(Pagos::getImporte)
             .sum();
         
@@ -187,11 +185,11 @@ public class FacturaService {
         }
 
         if (factura.getEstado() != null) {
-            String estado = factura.getEstado().toLowerCase();
-            if (!estado.equals("pendiente") && !estado.equals("emitida") && 
-                !estado.equals("pagada") && !estado.equals("no pagada")) {
+            String estado = factura.getEstado().toUpperCase().trim();
+            if (!estado.equals("PENDIENTE") && !estado.equals("EMITIDA") && 
+                !estado.equals("PAGADA") && !estado.equals("VENCIDA")) {
                 throw new IllegalArgumentException("Estado de factura inválido: " + factura.getEstado() + 
-                    ". Estados válidos: Pendiente, Emitida, Pagada, No pagada");
+                    ". Estados válidos: PENDIENTE, EMITIDA, PAGADA, VENCIDA");
             }
         }
 
