@@ -204,7 +204,10 @@ public class InformesServlet extends HttpServlet {
 
     // ----------------------- HANDLE INFORMES ------------------------
     private List<Map<String, Object>> handleVentasPorEmpleado(LocalDate desde, LocalDate hasta) {
-        System.out.println("[INFORME] Iniciando handleVentasPorEmpleado - desde: " + desde + ", hasta: " + hasta);
+        System.out.println("[INFORME] ========================================");
+        System.out.println("[INFORME] Iniciando handleVentasPorEmpleado");
+        System.out.println("[INFORME] Parámetros: desde=" + desde + ", hasta=" + hasta);
+        System.out.println("[INFORME] ========================================");
         
         // Crear EntityManager en el hilo secundario
         EntityManager em = emf.createEntityManager();
@@ -222,28 +225,63 @@ public class InformesServlet extends HttpServlet {
             
             tx.commit();
             
-            System.out.println("[INFORME] Total facturas encontradas: " + facturas.size());
+            System.out.println("[INFORME] Total facturas encontradas en BD: " + facturas.size());
+            
+            // Mostrar todas las fechas de facturas para debugging
+            if (facturas.size() > 0) {
+                System.out.println("[INFORME] Fechas de todas las facturas:");
+                facturas.forEach(f -> {
+                    System.out.println("  - Factura ID: " + f.getId_factura() + 
+                        ", Fecha: " + f.getFecha_emision() + 
+                        ", Empleado: " + (f.getEmpleado() != null ? f.getEmpleado().getNombre() : "null") +
+                        ", Total: " + f.getTotal());
+                });
+            }
 
             // Filtrar por fechas
+            int facturasAntesFiltroDesde = facturas.size();
             if (desde != null) {
                 facturas = facturas.stream()
-                        .filter(f -> f.getFecha_emision() != null && !f.getFecha_emision().isBefore(desde))
+                        .filter(f -> {
+                            if (f.getFecha_emision() == null) {
+                                System.out.println("[INFORME] Factura ID " + f.getId_factura() + " tiene fecha_emision NULL, excluida");
+                                return false;
+                            }
+                            boolean pasa = !f.getFecha_emision().isBefore(desde);
+                            if (!pasa) {
+                                System.out.println("[INFORME] Factura ID " + f.getId_factura() + " fecha " + f.getFecha_emision() + " es anterior a desde " + desde);
+                            }
+                            return pasa;
+                        })
                         .collect(Collectors.toList());
-                System.out.println("[INFORME] Después de filtrar desde " + desde + ": " + facturas.size() + " facturas");
-            }
-            if (hasta != null) {
-                facturas = facturas.stream()
-                        .filter(f -> f.getFecha_emision() != null && !f.getFecha_emision().isAfter(hasta))
-                        .collect(Collectors.toList());
-                System.out.println("[INFORME] Después de filtrar hasta " + hasta + ": " + facturas.size() + " facturas");
+                System.out.println("[INFORME] Después de filtrar desde " + desde + ": " + facturas.size() + " facturas (de " + facturasAntesFiltroDesde + ")");
             }
             
-            // Debug: mostrar algunas fechas de facturas
-            if (facturas.size() > 0 && facturas.size() <= 5) {
-                System.out.println("[INFORME] Fechas de facturas encontradas:");
+            int facturasAntesFiltroHasta = facturas.size();
+            if (hasta != null) {
+                facturas = facturas.stream()
+                        .filter(f -> {
+                            if (f.getFecha_emision() == null) {
+                                return false;
+                            }
+                            boolean pasa = !f.getFecha_emision().isAfter(hasta);
+                            if (!pasa) {
+                                System.out.println("[INFORME] Factura ID " + f.getId_factura() + " fecha " + f.getFecha_emision() + " es posterior a hasta " + hasta);
+                            }
+                            return pasa;
+                        })
+                        .collect(Collectors.toList());
+                System.out.println("[INFORME] Después de filtrar hasta " + hasta + ": " + facturas.size() + " facturas (de " + facturasAntesFiltroHasta + ")");
+            }
+            
+            // Debug: mostrar facturas que pasaron el filtro
+            if (facturas.size() > 0) {
+                System.out.println("[INFORME] Facturas que pasaron el filtro:");
                 facturas.forEach(f -> System.out.println("  - Factura ID: " + f.getId_factura() + 
                     ", Fecha: " + f.getFecha_emision() + 
                     ", Empleado: " + (f.getEmpleado() != null ? f.getEmpleado().getNombre() : "null")));
+            } else {
+                System.out.println("[INFORME] No hay facturas que pasen el filtro de fechas");
             }
 
             // Agrupar por empleado
@@ -272,6 +310,23 @@ public class InformesServlet extends HttpServlet {
             }
 
             System.out.println("[INFORME] Resultado final: " + resultado.size() + " empleados");
+            
+            // Debug--> mostrar el contenido del resultado antes de devolverlo
+            System.out.println("[INFORME] Contenido del resultado:");
+            for (Map<String, Object> item : resultado) {
+                System.out.println("  - " + item);
+            }
+            
+            // Intentar serializar a JSON para verificar
+            try {
+                String jsonTest = JsonUtil.toJson(resultado);
+                System.out.println("[INFORME] JSON serializado (primeros 500 chars): " + 
+                    (jsonTest.length() > 500 ? jsonTest.substring(0, 500) + "..." : jsonTest));
+            } catch (Exception e) {
+                System.err.println("[INFORME] Error al serializar resultado a JSON: " + e.getMessage());
+                e.printStackTrace();
+            }
+            
             return resultado;
         } catch (Exception e) {
             System.err.println("Error en handleVentasPorEmpleado: " + e.getMessage());
@@ -405,11 +460,11 @@ public class InformesServlet extends HttpServlet {
             tx = em.getTransaction();
             tx.begin();
             
-            // Usar producto basado en el getter getProducto()
+            // Maldita mayuscula
             List<FacturaProducto> items = em.createQuery(
                     "SELECT fp FROM FacturaProducto fp " +
                             "LEFT JOIN FETCH fp.factura " +
-                            "LEFT JOIN FETCH fp.producto",
+                            "LEFT JOIN FETCH fp.Producto",
                     FacturaProducto.class
             ).getResultList();
             
@@ -453,7 +508,7 @@ public class InformesServlet extends HttpServlet {
                 }
                 itemsProcesados++;
                 String nombre = safeUpperFirst(fp.getProducto().getNombre());
-                double subtotal = fp.getSubtotal() == 0 ? fp.getCantidad() * fp.getprecio_unitario() : fp.getSubtotal();
+                double subtotal = fp.getSubtotal() == 0 ? fp.getCantidad() * fp.getPrecio_unitario() : fp.getSubtotal();
                 acumulado.merge(nombre, subtotal, Double::sum);
             }
 
@@ -572,6 +627,15 @@ public class InformesServlet extends HttpServlet {
             this.success = success;
             this.data = data;
         }
+        
+        // Getters necesarios para Jackson
+        public boolean isSuccess() {
+            return success;
+        }
+        
+        public Object getData() {
+            return data;
+        }
     }
 
     private static class ErrorMsg {
@@ -579,6 +643,11 @@ public class InformesServlet extends HttpServlet {
 
         ErrorMsg(String error) {
             this.error = error;
+        }
+        
+        // Getter necesario para Jackson
+        public String getError() {
+            return error;
         }
     }
 

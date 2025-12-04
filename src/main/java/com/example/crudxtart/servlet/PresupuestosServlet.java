@@ -332,10 +332,11 @@ public class PresupuestosServlet extends HttpServlet {
             // Solo procesar fecha_cierre del JSON si NO está cambiando a APROBADO
             // Si cambia a APROBADO, dejar que el servicio asigne la fecha automáticamente
             boolean cambiaAAprobado = jsonNode.has("estado") && 
-                                     jsonNode.get("estado").isTextual() &&
-                                     jsonNode.get("estado").asText().equalsIgnoreCase("APROBADO") &&
-                                     (estadoOriginal == null || !estadoOriginal.equalsIgnoreCase("APROBADO"));
+                                    jsonNode.get("estado").isTextual() &&
+                                    jsonNode.get("estado").asText().equalsIgnoreCase("APROBADO") &&
+                                    (estadoOriginal == null || !estadoOriginal.equalsIgnoreCase("APROBADO"));
             
+            // Si viene fecha_cierre en el JSON y NO está cambiando a APROBADO, procesarla
             if (jsonNode.has("fecha_cierre") && jsonNode.get("fecha_cierre").isTextual() && !cambiaAAprobado) {
                 try {
                     String fechaStr = jsonNode.get("fecha_cierre").asText();
@@ -349,6 +350,14 @@ public class PresupuestosServlet extends HttpServlet {
                     sendError(resp, "Formato de fecha_cierre inválido. Use formato YYYY-MM-DD");
                     return;
                 }
+            }
+            // Si NO viene fecha_cierre en el JSON y el estado actual es APROBADO, preservar la fecha existente
+            // (el servicio lo asigna automáticamente si es null y el estado es APROBADO)
+            else if (!jsonNode.has("fecha_cierre") && 
+                        existente.getEstado() != null &&
+                        existente.getEstado().equalsIgnoreCase("APROBADO") &&
+                        existente.getFecha_cierre() != null) {
+                // Preservar la fecha_cierre existente si el estado ya era APROBADO
             }
             
             if (jsonNode.has("id_empleado") && jsonNode.get("id_empleado").isNumber()) {

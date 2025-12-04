@@ -80,6 +80,12 @@ public class PresupuestosService {
         Presupuestos existente = findPresupuestoById(p.getId_Presupuesto());
         String estadoOriginal = existente != null ? existente.getEstado() : null;
         
+        // Mantener fecha_cierre del objeto si no viene en el objeto p
+        // (necesario porque el servlet puede no enviar todos los campos)
+        if (existente != null && p.getFecha_cierre() == null) {
+            p.setFecha_cierre(existente.getFecha_cierre());
+        }
+        
         // Validar transición de estado si cambió
         if (existente != null && 
             p.getEstado() != null && 
