@@ -4,15 +4,15 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.List;
 
-import com.example.crudxtart.models.Presupuestos;
-import com.example.crudxtart.models.PresupuestoProducto;
-import com.example.crudxtart.models.Factura;
-import com.example.crudxtart.models.Empleado;
 import com.example.crudxtart.models.Cliente;
+import com.example.crudxtart.models.Empleado;
+import com.example.crudxtart.models.Factura;
+import com.example.crudxtart.models.PresupuestoProducto;
+import com.example.crudxtart.models.Presupuestos;
 import com.example.crudxtart.models.Producto;
-import com.example.crudxtart.service.PresupuestosService;
-import com.example.crudxtart.service.EmpleadoService;
 import com.example.crudxtart.service.ClienteService;
+import com.example.crudxtart.service.EmpleadoService;
+import com.example.crudxtart.service.PresupuestosService;
 import com.example.crudxtart.service.ProductoService;
 import com.example.crudxtart.utils.JsonUtil;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -298,6 +298,9 @@ public class PresupuestosServlet extends HttpServlet {
                 return;
             }
             
+            // Guardar estado original para que el servicio pueda detectar cambios
+            String estadoOriginal = existente.getEstado();
+            
             // Actualizar solo los campos enviados (actualización parcial)
             if (jsonNode.has("presupuesto") && jsonNode.get("presupuesto").isNumber()) {
                 double nuevoPresupuesto = jsonNode.get("presupuesto").asDouble();
@@ -326,7 +329,14 @@ public class PresupuestosServlet extends HttpServlet {
                 }
             }
             
-            if (jsonNode.has("fecha_cierre") && jsonNode.get("fecha_cierre").isTextual()) {
+            // Solo procesar fecha_cierre del JSON si NO está cambiando a APROBADO
+            // Si cambia a APROBADO, dejar que el servicio asigne la fecha automáticamente
+            boolean cambiaAAprobado = jsonNode.has("estado") && 
+                                     jsonNode.get("estado").isTextual() &&
+                                     jsonNode.get("estado").asText().equalsIgnoreCase("APROBADO") &&
+                                     (estadoOriginal == null || !estadoOriginal.equalsIgnoreCase("APROBADO"));
+            
+            if (jsonNode.has("fecha_cierre") && jsonNode.get("fecha_cierre").isTextual() && !cambiaAAprobado) {
                 try {
                     String fechaStr = jsonNode.get("fecha_cierre").asText();
                     if (fechaStr != null && !fechaStr.trim().isEmpty()) {

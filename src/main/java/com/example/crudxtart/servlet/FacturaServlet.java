@@ -5,11 +5,15 @@ import java.io.IOException;
 import java.util.List;
 
 import com.example.crudxtart.models.Factura;
+import com.example.crudxtart.models.FacturaProducto;
 import com.example.crudxtart.models.Empleado;
 import com.example.crudxtart.models.Cliente;
+import com.example.crudxtart.models.Producto;
 import com.example.crudxtart.service.FacturaService;
+import com.example.crudxtart.service.FacturaProductoService;
 import com.example.crudxtart.service.EmpleadoService;
 import com.example.crudxtart.service.ClienteService;
+import com.example.crudxtart.service.ProductoService;
 import com.example.crudxtart.utils.JsonUtil;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -31,6 +35,12 @@ public class FacturaServlet extends HttpServlet {
 
     @Inject
     private ClienteService clienteService;
+    
+    @Inject
+    private ProductoService productoService;
+    
+    @Inject
+    private FacturaProductoService facturaProductoService;
 
 
     // ============================================================
@@ -186,6 +196,71 @@ public class FacturaServlet extends HttpServlet {
                 resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
                 sendError(resp, "Error: No se pudo generar el ID de la factura");
                 return;
+            }
+            
+            // Procesar productos si vienen en el JSON (opcional)
+            if (jsonNode.has("productos") && jsonNode.get("productos").isArray()) {
+                com.fasterxml.jackson.databind.JsonNode productosArray = jsonNode.get("productos");
+                
+                for (com.fasterxml.jackson.databind.JsonNode productoNode : productosArray) {
+                    try {
+                        // Validar campos obligatorios del producto
+                        if (!productoNode.has("id_producto") || !productoNode.get("id_producto").isNumber()) {
+                            continue; // Saltar productos sin ID válido
+                        }
+                        
+                        Integer productoId = productoNode.get("id_producto").asInt();
+                        Producto producto = productoService.findProductoById(productoId);
+                        
+                        if (producto == null) {
+                            continue; // Saltar si el producto no existe
+                        }
+                        
+                        // Obtener cliente beneficiario
+                        Cliente beneficiario = null;
+                        if (productoNode.has("id_cliente_beneficiario") && productoNode.get("id_cliente_beneficiario").isNumber()) {
+                            Integer beneficiarioId = productoNode.get("id_cliente_beneficiario").asInt();
+                            beneficiario = clienteService.findClienteById(beneficiarioId);
+                        }
+                        
+                        // Si no viene beneficiario, usar el cliente pagador por defecto
+                        if (beneficiario == null) {
+                            beneficiario = creada.getCliente_pagador();
+                        }
+                        
+                        // Crear FacturaProducto
+                        FacturaProducto fp = new FacturaProducto();
+                        fp.setFactura(creada);
+                        fp.setProducto(producto);
+                        fp.setCliente_beneficiario(beneficiario);
+                        
+                        // Cantidad (por defecto 1)
+                        int cantidad = productoNode.has("cantidad") && productoNode.get("cantidad").isNumber()
+                            ? productoNode.get("cantidad").asInt()
+                            : 1;
+                        fp.setCantidad(cantidad);
+                        
+                        // Precio unitario (por defecto el precio del producto)
+                        double precioUnitario = productoNode.has("precio_unitario") && productoNode.get("precio_unitario").isNumber()
+                            ? productoNode.get("precio_unitario").asDouble()
+                            : producto.getPrecio();
+                        fp.setPrecio_unitario(precioUnitario);
+                        
+                        // Subtotal
+                        double subtotal = productoNode.has("subtotal") && productoNode.get("subtotal").isNumber()
+                            ? productoNode.get("subtotal").asDouble()
+                            : precioUnitario * cantidad;
+                        fp.setSubtotal(subtotal);
+                        
+                        // Guardar el producto de factura
+                        facturaProductoService.createFacturaProducto(fp);
+                        
+                    } catch (Exception e) {
+                        // Continuar con el siguiente producto si hay error en uno
+                        System.err.println("Error procesando producto en factura: " + e.getMessage());
+                        e.printStackTrace();
+                    }
+                }
             }
             
             sendSuccess(resp, creada);

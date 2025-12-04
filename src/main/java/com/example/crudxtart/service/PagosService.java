@@ -38,11 +38,11 @@ public class PagosService
         Pagos pagoCreado = pagosRepository.createPagos(p);
         
         if (pagoCreado.getEstado() != null && 
-            pagoCreado.getEstado().equalsIgnoreCase("confirmado")) {
+            pagoCreado.getEstado().equalsIgnoreCase("PAGADA")) {
             
             Factura factura = pagoCreado.getFactura();
-            if (factura != null && !factura.getEstado().equalsIgnoreCase("pagada")) {
-                factura.setEstado("Pagada");
+            if (factura != null && !factura.getEstado().equalsIgnoreCase("PAGADA")) {
+                factura.setEstado("PAGADA");
                 facturaService.updateFactura(factura);
             }
         }
@@ -76,7 +76,7 @@ public class PagosService
             Integer pagoIdActual = pago.getId_pago();
             double totalPagado = pagosExistentes.stream()
                 .filter(p -> p.getEstado() != null && 
-                            p.getEstado().equalsIgnoreCase("confirmado") &&
+                            p.getEstado().equalsIgnoreCase("PAGADA") &&
                             (pagoIdActual == null || !p.getId_pago().equals(pagoIdActual)))
                 .mapToDouble(Pagos::getImporte)
                 .sum();
@@ -99,9 +99,10 @@ public class PagosService
         }
 
         if (pago.getEstado() != null) {
-            String estado = pago.getEstado().toLowerCase();
-            if (!estado.equals("pendiente") && !estado.equals("confirmado") && !estado.equals("fallido")) {
-                throw new IllegalArgumentException("Estado inválido: " + pago.getEstado());
+            String estado = pago.getEstado().toUpperCase().trim();
+            if (!estado.equals("PENDIENTE") && !estado.equals("PAGADA") && !estado.equals("CANCELADA")) {
+                throw new IllegalArgumentException("Estado inválido: " + pago.getEstado() + 
+                    ". Estados válidos: PENDIENTE, PAGADA, CANCELADA");
             }
         }
 

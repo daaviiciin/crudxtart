@@ -1,13 +1,14 @@
 package com.example.crudxtart.repository;
 
+import java.util.List;
+
 import com.example.crudxtart.models.Presupuestos;
+
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.NoResultException;
 import jakarta.transaction.Transactional;
-
-import java.util.List;
 
 @ApplicationScoped
 public class PresupuestosRepositoryImpl implements PresupuestosRepository {
@@ -119,6 +120,8 @@ public class PresupuestosRepositoryImpl implements PresupuestosRepository {
         {
             em.getTransaction().begin();
             Presupuestos actualizado = em.merge(p);
+            em.flush(); // Forzar sincronización con la BD
+            em.refresh(actualizado); // Refrescar para obtener valores actualizados (como fecha_cierre automática)
             em.getTransaction().commit();
             return actualizado;
         }catch (Exception ex)

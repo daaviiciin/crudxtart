@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.example.crudxtart.models.Factura;
+import com.example.crudxtart.models.FacturaProducto;
 import com.example.crudxtart.models.PresupuestoProducto;
 import com.example.crudxtart.models.Presupuestos;
 import com.example.crudxtart.repository.PresupuestosRepository;
@@ -23,6 +24,9 @@ public class PresupuestosService {
     
     @Inject
     FacturaService facturaService;
+    
+    @Inject
+    FacturaProductoService facturaProductoService;
 
     public List<Presupuestos> findAllPresupuestos() {
         return presupuestosRepository.findAllPresupuestos();
@@ -39,6 +43,13 @@ public class PresupuestosService {
         
         if (p.getEstado() == null || p.getEstado().trim().isEmpty()) {
             p.setEstado("PENDIENTE");
+        }
+        
+        // Si el estado es APROBADO y no tiene fecha_cierre, asignarla automáticamente ANTES de validar
+        if (p.getEstado() != null && 
+            p.getEstado().equalsIgnoreCase("APROBADO") && 
+            p.getFecha_cierre() == null) {
+            p.setFecha_cierre(LocalDate.now());
         }
         
         if (p.getPresupuesto() <= 0 && p.getPresupuestoProductos() != null && !p.getPresupuestoProductos().isEmpty()) {
@@ -65,22 +76,35 @@ public class PresupuestosService {
     }
 
     public Presupuestos updatePresupuesto(Presupuestos p) {
+        // Obtener el estado original de la BD antes de cualquier modificación
         Presupuestos existente = findPresupuestoById(p.getId_Presupuesto());
+        String estadoOriginal = existente != null ? existente.getEstado() : null;
+        
+        // Validar transición de estado si cambió
         if (existente != null && 
             p.getEstado() != null && 
-            !existente.getEstado().equalsIgnoreCase(p.getEstado())) {
-            validarTransicionEstado(existente.getEstado(), p.getEstado());
+            estadoOriginal != null &&
+            !estadoOriginal.equalsIgnoreCase(p.getEstado())) {
+            validarTransicionEstado(estadoOriginal, p.getEstado());
         }
         
-        validarPresupuesto(p);
-        
-        if (existente != null &&
-            p.getEstado() != null && 
+        // Si el estado es APROBADO y no tiene fecha_cierre, asignarla automáticamente ANTES de validar
+        if (p.getEstado() != null && 
             p.getEstado().equalsIgnoreCase("APROBADO") && 
-            p.getFecha_cierre() == null &&
-            !existente.getEstado().equalsIgnoreCase("APROBADO")) {
+            p.getFecha_cierre() == null) {
             p.setFecha_cierre(LocalDate.now());
         }
+        
+        // Si el estado cambia de APROBADO a otro, limpiar fecha_cierre
+        if (estadoOriginal != null &&
+            estadoOriginal.equalsIgnoreCase("APROBADO") &&
+            p.getEstado() != null &&
+            !p.getEstado().equalsIgnoreCase("APROBADO")) {
+            p.setFecha_cierre(null);
+        }
+        
+        // Validar después de asignar fecha_cierre automáticamente
+        validarPresupuesto(p);
         
         if (p.getPresupuestoProductos() != null) {
             for (PresupuestoProducto pp : p.getPresupuestoProductos()) {
@@ -133,6 +157,15 @@ public class PresupuestosService {
         List<LocalDate> fechas = calcularFechasPlazos(numPlazos);
         double precioPorPlazo = presupuesto.getPresupuesto() / numPlazos;
         
+        // Obtener productos del presupuesto
+        List<PresupuestoProducto> productosPresupuesto = presupuesto.getPresupuestoProductos();
+        if (productosPresupuesto == null || productosPresupuesto.isEmpty()) {
+            throw new IllegalArgumentException("El presupuesto no tiene productos asociados");
+        }
+        
+        // Calcular subtotal por producto por plazo (distribución proporcional)
+        double totalPresupuesto = presupuesto.getPresupuesto();
+        
         List<Factura> facturas = new ArrayList<>();
         for (int i = 0; i < numPlazos; i++) {
             Factura factura = new Factura();
@@ -145,7 +178,39 @@ public class PresupuestosService {
             factura.setNotas("Plazo " + (i + 1) + "/" + numPlazos + 
                             " - Generada desde presupuesto #" + presupuestoId);
             
-            facturas.add(facturaService.createFactura(factura));
+            // Crear la factura primero para obtener el ID
+            Factura facturaCreada = facturaService.createFactura(factura);
+            
+            // Copiar productos del presupuesto a la factura
+            double subtotalAcumulado = 0.0;
+            for (int j = 0; j < productosPresupuesto.size(); j++) {
+                PresupuestoProducto pp = productosPresupuesto.get(j);
+                FacturaProducto fp = new FacturaProducto();
+                fp.setFactura(facturaCreada);
+                fp.setProducto(pp.getProducto());
+                fp.setCliente_beneficiario(pp.getCliente_beneficiario());
+                fp.setCantidad(pp.getCantidad());
+                fp.setPrecio_unitario(pp.getPrecio_unitario());
+                
+                // Distribuir el subtotal proporcionalmente entre plazos
+                // Calcular qué porcentaje del total del presupuesto representa este producto
+                double porcentajeProducto = pp.getSubtotal() / totalPresupuesto;
+                double subtotalProductoEnEstePlazo = precioPorPlazo * porcentajeProducto;
+                
+                // Si es el último producto del último plazo, ajustar para que sume exactamente
+                if (i == numPlazos - 1 && j == productosPresupuesto.size() - 1) {
+                    // Asegurar que el total de la factura sea exactamente precioPorPlazo
+                    fp.setSubtotal(precioPorPlazo - subtotalAcumulado);
+                } else {
+                    fp.setSubtotal(subtotalProductoEnEstePlazo);
+                    subtotalAcumulado += subtotalProductoEnEstePlazo;
+                }
+                
+                // Guardar el producto de factura
+                facturaProductoService.createFacturaProducto(fp);
+            }
+            
+            facturas.add(facturaCreada);
         }
         
         return facturas;
@@ -177,9 +242,9 @@ public class PresupuestosService {
     private String determinarEstadoFactura(LocalDate fechaEmision) {
         LocalDate hoy = LocalDate.now();
         if (fechaEmision.isAfter(hoy)) {
-            return "Pendiente";
+            return "PENDIENTE";
         } else {
-            return "Emitida";
+            return "EMITIDA";
         }
     }
 
