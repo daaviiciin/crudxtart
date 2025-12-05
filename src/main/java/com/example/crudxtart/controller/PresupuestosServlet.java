@@ -2,6 +2,7 @@ package com.example.crudxtart.controller;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.util.logging.Logger;
 import java.util.List;
 
 import com.example.crudxtart.models.Cliente;
@@ -27,6 +28,11 @@ import jakarta.servlet.http.HttpServletResponse;
 @WebServlet("/presupuestos/*")
 public class PresupuestosServlet extends HttpServlet {
 
+
+    // 1º Cambio para el log de errores
+    private static final Logger logger = Logger.getLogger(PresupuestosServlet.class.getName());
+    private static final String CODIGO_LOG = "CTL-PRE-";
+
     @Inject
     private PresupuestosService presupuestosService;
 
@@ -47,6 +53,7 @@ public class PresupuestosServlet extends HttpServlet {
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws IOException {
 
+        logger.info("[" + CODIGO_LOG + "001] doGet - inicio"); // CAMBIO LOG
         resp.setContentType("application/json");
         resp.setCharacterEncoding("UTF-8");
 
@@ -88,6 +95,7 @@ public class PresupuestosServlet extends HttpServlet {
     protected void doPost(HttpServletRequest req, HttpServletResponse resp)
             throws IOException {
 
+        logger.info("[" + CODIGO_LOG + "002] doPost - inicio"); // CAMBIO LOG
         resp.setContentType("application/json");
         resp.setCharacterEncoding("UTF-8");
 
@@ -97,12 +105,12 @@ public class PresupuestosServlet extends HttpServlet {
                 handleGenerarFacturas(req, resp);
                 return;
             }
-            
+
             String body = readBody(req);
-            
+
             ObjectMapper mapper = new ObjectMapper();
             JsonNode jsonNode = mapper.readTree(body);
-            
+
             Presupuestos prep = new Presupuestos();
             prep.setId_Presupuesto(null);
             if (jsonNode.has("presupuesto") && jsonNode.get("presupuesto").isNumber()) {
@@ -112,7 +120,7 @@ public class PresupuestosServlet extends HttpServlet {
                 sendError(resp, "El campo 'presupuesto' es obligatorio y debe ser un número");
                 return;
             }
-            
+
             if (jsonNode.has("estado") && jsonNode.get("estado").isTextual()) {
                 prep.setEstado(jsonNode.get("estado").asText());
             } else {
@@ -120,7 +128,7 @@ public class PresupuestosServlet extends HttpServlet {
                 sendError(resp, "El campo 'estado' es obligatorio");
                 return;
             }
-            
+
             if (jsonNode.has("fecha_apertura") && jsonNode.get("fecha_apertura").isTextual()) {
                 try {
                     prep.setFecha_apertura(java.time.LocalDate.parse(jsonNode.get("fecha_apertura").asText()));
@@ -132,7 +140,7 @@ public class PresupuestosServlet extends HttpServlet {
             } else {
                 prep.setFecha_apertura(java.time.LocalDate.now());
             }
-            
+
             if (jsonNode.has("fecha_cierre") && jsonNode.get("fecha_cierre").isTextual() && !jsonNode.get("fecha_cierre").asText().isEmpty()) {
                 try {
                     prep.setFecha_cierre(java.time.LocalDate.parse(jsonNode.get("fecha_cierre").asText()));
@@ -142,7 +150,7 @@ public class PresupuestosServlet extends HttpServlet {
                     return;
                 }
             }
-            
+
             if (jsonNode.has("id_empleado") && jsonNode.get("id_empleado").isNumber()) {
                 Integer empleadoId = jsonNode.get("id_empleado").asInt();
                 Empleado emp = empleadoService.findEmpleadoById(empleadoId);
@@ -158,7 +166,7 @@ public class PresupuestosServlet extends HttpServlet {
                 sendError(resp, "El campo 'id_empleado' es obligatorio");
                 return;
             }
-            
+
             if (jsonNode.has("id_cliente_pagador") && jsonNode.get("id_cliente_pagador").isNumber()) {
                 Integer clienteId = jsonNode.get("id_cliente_pagador").asInt();
                 Cliente cli = clienteService.findClienteById(clienteId);
@@ -174,7 +182,7 @@ public class PresupuestosServlet extends HttpServlet {
                 sendError(resp, "El campo 'id_cliente_pagador' es obligatorio");
                 return;
             }
-            
+
             if (jsonNode.has("id_cliente_beneficiario") && jsonNode.get("id_cliente_beneficiario").isNumber()) {
                 Integer clienteId = jsonNode.get("id_cliente_beneficiario").asInt();
                 Cliente cli = clienteService.findClienteById(clienteId);
@@ -190,18 +198,18 @@ public class PresupuestosServlet extends HttpServlet {
                 sendError(resp, "El campo 'id_cliente_beneficiario' es obligatorio");
                 return;
             }
-            
+
             if (jsonNode.has("productos") && jsonNode.get("productos").isArray()) {
                 java.util.List<PresupuestoProducto> productos = new java.util.ArrayList<>();
                 for (JsonNode productoNode : jsonNode.get("productos")) {
                     PresupuestoProducto pp = new PresupuestoProducto();
-                    
+
                     if (!productoNode.has("id_producto") || !productoNode.get("id_producto").isNumber()) {
                         resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
                         sendError(resp, "Cada producto debe tener un 'id_producto' válido");
                         return;
                     }
-                    
+
                     Integer productoId = productoNode.get("id_producto").asInt();
                     Producto prod = productoService.findProductoById(productoId);
                     if (prod == null) {
@@ -210,11 +218,11 @@ public class PresupuestosServlet extends HttpServlet {
                         return;
                     }
                     pp.setProducto(prod);
-                    
-                    Integer beneficiarioId = productoNode.has("id_cliente_beneficiario") && productoNode.get("id_cliente_beneficiario").isNumber() 
-                        ? productoNode.get("id_cliente_beneficiario").asInt()
-                        : prep.getId_cliente_beneficiario();
-                    
+
+                    Integer beneficiarioId = productoNode.has("id_cliente_beneficiario") && productoNode.get("id_cliente_beneficiario").isNumber()
+                            ? productoNode.get("id_cliente_beneficiario").asInt()
+                            : prep.getId_cliente_beneficiario();
+
                     Cliente beneficiario = clienteService.findClienteById(beneficiarioId);
                     if (beneficiario == null) {
                         resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
@@ -222,22 +230,22 @@ public class PresupuestosServlet extends HttpServlet {
                         return;
                     }
                     pp.setCliente_beneficiario(beneficiario);
-                    
+
                     int cantidad = productoNode.has("cantidad") && productoNode.get("cantidad").isNumber()
-                        ? productoNode.get("cantidad").asInt()
-                        : 1;
+                            ? productoNode.get("cantidad").asInt()
+                            : 1;
                     pp.setCantidad(cantidad);
-                    
+
                     double precioUnitario = productoNode.has("precio_unitario") && productoNode.get("precio_unitario").isNumber()
-                        ? productoNode.get("precio_unitario").asDouble()
-                        : prod.getPrecio();
+                            ? productoNode.get("precio_unitario").asDouble()
+                            : prod.getPrecio();
                     pp.setPrecio_unitario(precioUnitario);
-                    
+
                     double subtotal = productoNode.has("subtotal") && productoNode.get("subtotal").isNumber()
-                        ? productoNode.get("subtotal").asDouble()
-                        : precioUnitario * cantidad;
+                            ? productoNode.get("subtotal").asDouble()
+                            : precioUnitario * cantidad;
                     pp.setSubtotal(subtotal);
-                    
+
                     pp.setPresupuesto(prep);
                     productos.add(pp);
                 }
@@ -249,13 +257,13 @@ public class PresupuestosServlet extends HttpServlet {
             }
 
             Presupuestos creado = presupuestosService.createPresupuesto(prep);
-            
+
             if (creado.getId_Presupuesto() == null) {
                 resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
                 sendError(resp, "Error: No se pudo generar el ID del presupuesto");
                 return;
             }
-            
+
             sendSuccess(resp, creado);
 
         } catch (com.fasterxml.jackson.core.JsonProcessingException ex) {
@@ -274,12 +282,13 @@ public class PresupuestosServlet extends HttpServlet {
     protected void doPut(HttpServletRequest req, HttpServletResponse resp)
             throws IOException {
 
+        logger.info("[" + CODIGO_LOG + "003] doPut - inicio"); // CAMBIO LOG
         resp.setContentType("application/json");
         resp.setCharacterEncoding("UTF-8");
 
         try {
             String body = readBody(req);
-            
+
             ObjectMapper mapper = new ObjectMapper();
             JsonNode jsonNode = mapper.readTree(body);
 
@@ -297,10 +306,10 @@ public class PresupuestosServlet extends HttpServlet {
                 sendError(resp, "Presupuesto no encontrado");
                 return;
             }
-            
+
             // Guardar estado original para que el servicio pueda detectar cambios
             String estadoOriginal = existente.getEstado();
-            
+
             // Actualizar solo los campos enviados (actualización parcial)
             if (jsonNode.has("presupuesto") && jsonNode.get("presupuesto").isNumber()) {
                 double nuevoPresupuesto = jsonNode.get("presupuesto").asDouble();
@@ -308,14 +317,14 @@ public class PresupuestosServlet extends HttpServlet {
                     existente.setPresupuesto(nuevoPresupuesto);
                 }
             }
-            
+
             if (jsonNode.has("estado") && jsonNode.get("estado").isTextual()) {
                 String nuevoEstado = jsonNode.get("estado").asText();
                 if (nuevoEstado != null && !nuevoEstado.trim().isEmpty()) {
                     existente.setEstado(nuevoEstado);
                 }
             }
-            
+
             if (jsonNode.has("fecha_apertura") && jsonNode.get("fecha_apertura").isTextual()) {
                 try {
                     String fechaStr = jsonNode.get("fecha_apertura").asText();
@@ -328,14 +337,14 @@ public class PresupuestosServlet extends HttpServlet {
                     return;
                 }
             }
-            
+
             // Solo procesar fecha_cierre del JSON si NO está cambiando a APROBADO
             // Si cambia a APROBADO, dejar que el servicio asigne la fecha automáticamente
-            boolean cambiaAAprobado = jsonNode.has("estado") && 
-                                    jsonNode.get("estado").isTextual() &&
-                                    jsonNode.get("estado").asText().equalsIgnoreCase("APROBADO") &&
-                                    (estadoOriginal == null || !estadoOriginal.equalsIgnoreCase("APROBADO"));
-            
+            boolean cambiaAAprobado = jsonNode.has("estado") &&
+                    jsonNode.get("estado").isTextual() &&
+                    jsonNode.get("estado").asText().equalsIgnoreCase("APROBADO") &&
+                    (estadoOriginal == null || !estadoOriginal.equalsIgnoreCase("APROBADO"));
+
             // Si viene fecha_cierre en el JSON y NO está cambiando a APROBADO, procesarla
             if (jsonNode.has("fecha_cierre") && jsonNode.get("fecha_cierre").isTextual() && !cambiaAAprobado) {
                 try {
@@ -353,13 +362,13 @@ public class PresupuestosServlet extends HttpServlet {
             }
             // Si NO viene fecha_cierre en el JSON y el estado actual es APROBADO, preservar la fecha existente
             // (el servicio lo asigna automáticamente si es null y el estado es APROBADO)
-            else if (!jsonNode.has("fecha_cierre") && 
-                        existente.getEstado() != null &&
-                        existente.getEstado().equalsIgnoreCase("APROBADO") &&
-                        existente.getFecha_cierre() != null) {
+            else if (!jsonNode.has("fecha_cierre") &&
+                    existente.getEstado() != null &&
+                    existente.getEstado().equalsIgnoreCase("APROBADO") &&
+                    existente.getFecha_cierre() != null) {
                 // Preservar la fecha_cierre existente si el estado ya era APROBADO
             }
-            
+
             if (jsonNode.has("id_empleado") && jsonNode.get("id_empleado").isNumber()) {
                 Integer empleadoId = jsonNode.get("id_empleado").asInt();
                 Empleado emp = empleadoService.findEmpleadoById(empleadoId);
@@ -371,7 +380,7 @@ public class PresupuestosServlet extends HttpServlet {
                     return;
                 }
             }
-            
+
             if (jsonNode.has("id_cliente_pagador") && jsonNode.get("id_cliente_pagador").isNumber()) {
                 Integer clienteId = jsonNode.get("id_cliente_pagador").asInt();
                 Cliente cli = clienteService.findClienteById(clienteId);
@@ -383,7 +392,7 @@ public class PresupuestosServlet extends HttpServlet {
                     return;
                 }
             }
-            
+
             if (jsonNode.has("id_cliente_beneficiario") && jsonNode.get("id_cliente_beneficiario").isNumber()) {
                 Integer clienteId = jsonNode.get("id_cliente_beneficiario").asInt();
                 Cliente cli = clienteService.findClienteById(clienteId);
@@ -395,19 +404,19 @@ public class PresupuestosServlet extends HttpServlet {
                     return;
                 }
             }
-            
+
             if (jsonNode.has("productos") && jsonNode.get("productos").isArray()) {
                 existente.getPresupuestoProductos().clear();
-                
+
                 for (JsonNode productoNode : jsonNode.get("productos")) {
                     PresupuestoProducto pp = new PresupuestoProducto();
-                    
+
                     if (!productoNode.has("id_producto") || !productoNode.get("id_producto").isNumber()) {
                         resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
                         sendError(resp, "Cada producto debe tener un 'id_producto' válido");
                         return;
                     }
-                    
+
                     Integer productoId = productoNode.get("id_producto").asInt();
                     Producto prod = productoService.findProductoById(productoId);
                     if (prod == null) {
@@ -416,11 +425,11 @@ public class PresupuestosServlet extends HttpServlet {
                         return;
                     }
                     pp.setProducto(prod);
-                    
+
                     Integer beneficiarioId = productoNode.has("id_cliente_beneficiario") && productoNode.get("id_cliente_beneficiario").isNumber()
-                        ? productoNode.get("id_cliente_beneficiario").asInt()
-                        : existente.getId_cliente_beneficiario();
-                    
+                            ? productoNode.get("id_cliente_beneficiario").asInt()
+                            : existente.getId_cliente_beneficiario();
+
                     Cliente beneficiario = clienteService.findClienteById(beneficiarioId);
                     if (beneficiario == null) {
                         resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
@@ -428,22 +437,22 @@ public class PresupuestosServlet extends HttpServlet {
                         return;
                     }
                     pp.setCliente_beneficiario(beneficiario);
-                    
+
                     int cantidad = productoNode.has("cantidad") && productoNode.get("cantidad").isNumber()
-                        ? productoNode.get("cantidad").asInt()
-                        : 1;
+                            ? productoNode.get("cantidad").asInt()
+                            : 1;
                     pp.setCantidad(cantidad);
-                    
+
                     double precioUnitario = productoNode.has("precio_unitario") && productoNode.get("precio_unitario").isNumber()
-                        ? productoNode.get("precio_unitario").asDouble()
-                        : prod.getPrecio();
+                            ? productoNode.get("precio_unitario").asDouble()
+                            : prod.getPrecio();
                     pp.setPrecio_unitario(precioUnitario);
-                    
+
                     double subtotal = productoNode.has("subtotal") && productoNode.get("subtotal").isNumber()
-                        ? productoNode.get("subtotal").asDouble()
-                        : precioUnitario * cantidad;
+                            ? productoNode.get("subtotal").asDouble()
+                            : precioUnitario * cantidad;
                     pp.setSubtotal(subtotal);
-                    
+
                     pp.setPresupuesto(existente);
                     existente.getPresupuestoProductos().add(pp);
                 }
@@ -468,6 +477,7 @@ public class PresupuestosServlet extends HttpServlet {
     protected void doDelete(HttpServletRequest req, HttpServletResponse resp)
             throws IOException {
 
+        logger.info("[" + CODIGO_LOG + "004] doDelete - inicio"); // CAMBIO LOG
         resp.setContentType("application/json");
         resp.setCharacterEncoding("UTF-8");
 
@@ -481,14 +491,14 @@ public class PresupuestosServlet extends HttpServlet {
             }
 
             Integer id = Integer.parseInt(idParam);
-            
+
             Presupuestos prep = presupuestosService.findPresupuestoById(id);
             if (prep == null) {
                 resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
                 sendError(resp, "Presupuesto no encontrado");
                 return;
             }
-            
+
             presupuestosService.deletePresupuesto(id);
 
             sendSuccess(resp, null);
@@ -516,7 +526,7 @@ public class PresupuestosServlet extends HttpServlet {
                 sendError(resp, "ID de presupuesto no válido en la ruta");
                 return;
             }
-            
+
             Integer presupuestoId;
             try {
                 presupuestoId = Integer.parseInt(pathParts[1]);
@@ -525,24 +535,24 @@ public class PresupuestosServlet extends HttpServlet {
                 sendError(resp, "ID de presupuesto inválido: " + pathParts[1]);
                 return;
             }
-            
+
             // Leer body para obtener numPlazos
             String body = readBody(req);
             ObjectMapper mapper = new ObjectMapper();
             JsonNode jsonNode = mapper.readTree(body);
-            
+
             if (!jsonNode.has("num_plazos") || !jsonNode.get("num_plazos").isNumber()) {
                 resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
                 sendError(resp, "El campo 'num_plazos' es obligatorio y debe ser un número");
                 return;
             }
-            
+
             Integer numPlazos = jsonNode.get("num_plazos").asInt();
-            
+
             // Generar facturas
             List<Factura> facturas = presupuestosService.generarFacturasDesdePresupuesto(presupuestoId, numPlazos);
             sendSuccess(resp, facturas);
-            
+
         } catch (com.fasterxml.jackson.core.JsonProcessingException ex) {
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             sendError(resp, "Error en el formato JSON: " + ex.getMessage());

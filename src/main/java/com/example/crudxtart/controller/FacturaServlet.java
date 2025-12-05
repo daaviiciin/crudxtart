@@ -2,6 +2,7 @@ package com.example.crudxtart.controller;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.util.logging.Logger;
 import java.util.List;
 
 import com.example.crudxtart.models.Factura;
@@ -27,6 +28,11 @@ import jakarta.servlet.http.HttpServletResponse;
 @WebServlet("/facturas")
 public class FacturaServlet extends HttpServlet {
 
+
+    // 1º Cambio para el log de errores
+    private static final Logger logger = Logger.getLogger(FacturaServlet.class.getName());
+    private static final String CODIGO_LOG = "CTL-FAC-";
+
     @Inject
     private FacturaService facturaService;
 
@@ -35,10 +41,10 @@ public class FacturaServlet extends HttpServlet {
 
     @Inject
     private ClienteService clienteService;
-    
+
     @Inject
     private ProductoService productoService;
-    
+
     @Inject
     private FacturaProductoService facturaProductoService;
 
@@ -50,6 +56,7 @@ public class FacturaServlet extends HttpServlet {
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws IOException {
 
+        logger.info("[" + CODIGO_LOG + "001] doGet - inicio"); // CAMBIO LOG
         resp.setContentType("application/json");
         resp.setCharacterEncoding("UTF-8");
 
@@ -88,20 +95,21 @@ public class FacturaServlet extends HttpServlet {
     protected void doPost(HttpServletRequest req, HttpServletResponse resp)
             throws IOException {
 
+        logger.info("[" + CODIGO_LOG + "002] doPost - inicio"); // CAMBIO LOG
         resp.setContentType("application/json");
         resp.setCharacterEncoding("UTF-8");
 
         try {
             String body = readBody(req);
-            
+
             // Parsear JSON para obtener campos
             ObjectMapper mapper = new ObjectMapper();
             JsonNode jsonNode = mapper.readTree(body);
-            
+
             // Crear nuevo objeto Factura
             Factura fac = new Factura();
             fac.setId_factura(null); // Asegurar que el ID sea null para crear nuevo registro
-            
+
             // Extraer y validar campos básicos
             if (jsonNode.has("num_factura") && jsonNode.get("num_factura").isTextual()) {
                 fac.setNum_factura(jsonNode.get("num_factura").asText());
@@ -110,7 +118,7 @@ public class FacturaServlet extends HttpServlet {
                 sendError(resp, "El campo 'num_factura' es obligatorio");
                 return;
             }
-            
+
             if (jsonNode.has("total") && jsonNode.get("total").isNumber()) {
                 fac.setTotal(jsonNode.get("total").asDouble());
             } else {
@@ -118,7 +126,7 @@ public class FacturaServlet extends HttpServlet {
                 sendError(resp, "El campo 'total' es obligatorio y debe ser un número");
                 return;
             }
-            
+
             if (jsonNode.has("estado") && jsonNode.get("estado").isTextual()) {
                 fac.setEstado(jsonNode.get("estado").asText());
             } else {
@@ -126,13 +134,13 @@ public class FacturaServlet extends HttpServlet {
                 sendError(resp, "El campo 'estado' es obligatorio");
                 return;
             }
-            
+
             if (jsonNode.has("notas") && jsonNode.get("notas").isTextual()) {
                 fac.setNotas(jsonNode.get("notas").asText());
             } else {
                 fac.setNotas(""); // Valor por defecto si no viene
             }
-            
+
             // Manejar fecha_emision (o fecha)
             if (jsonNode.has("fecha_emision") && jsonNode.get("fecha_emision").isTextual()) {
                 try {
@@ -154,7 +162,7 @@ public class FacturaServlet extends HttpServlet {
                 // Si no viene fecha, establecerla automáticamente
                 fac.setFecha_emision(java.time.LocalDate.now());
             }
-            
+
             // Manejar cliente_pagador (obligatorio)
             if (jsonNode.has("id_cliente") && jsonNode.get("id_cliente").isNumber()) {
                 Integer clienteId = jsonNode.get("id_cliente").asInt();
@@ -171,7 +179,7 @@ public class FacturaServlet extends HttpServlet {
                 sendError(resp, "El campo 'id_cliente' es obligatorio");
                 return;
             }
-            
+
             // Manejar empleado (obligatorio)
             if (jsonNode.has("id_empleado") && jsonNode.get("id_empleado").isNumber()) {
                 Integer empleadoId = jsonNode.get("id_empleado").asInt();
@@ -190,71 +198,71 @@ public class FacturaServlet extends HttpServlet {
             }
 
             Factura creada = facturaService.createFactura(fac);
-            
+
             // Verificar que el ID se generó correctamente
             if (creada.getId_factura() == null) {
                 resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
                 sendError(resp, "Error: No se pudo generar el ID de la factura");
                 return;
             }
-            
+
             // Procesar productos si vienen en el JSON (opcional)
             if (jsonNode.has("productos") && jsonNode.get("productos").isArray()) {
                 com.fasterxml.jackson.databind.JsonNode productosArray = jsonNode.get("productos");
-                
+
                 for (com.fasterxml.jackson.databind.JsonNode productoNode : productosArray) {
                     try {
                         // Validar campos obligatorios del producto
                         if (!productoNode.has("id_producto") || !productoNode.get("id_producto").isNumber()) {
                             continue; // Saltar productos sin ID válido
                         }
-                        
+
                         Integer productoId = productoNode.get("id_producto").asInt();
                         Producto producto = productoService.findProductoById(productoId);
-                        
+
                         if (producto == null) {
                             continue; // Saltar si el producto no existe
                         }
-                        
+
                         // Obtener cliente beneficiario
                         Cliente beneficiario = null;
                         if (productoNode.has("id_cliente_beneficiario") && productoNode.get("id_cliente_beneficiario").isNumber()) {
                             Integer beneficiarioId = productoNode.get("id_cliente_beneficiario").asInt();
                             beneficiario = clienteService.findClienteById(beneficiarioId);
                         }
-                        
+
                         // Si no viene beneficiario, usar el cliente pagador por defecto
                         if (beneficiario == null) {
                             beneficiario = creada.getCliente_pagador();
                         }
-                        
+
                         // Crear FacturaProducto
                         FacturaProducto fp = new FacturaProducto();
                         fp.setFactura(creada);
                         fp.setProducto(producto);
                         fp.setCliente_beneficiario(beneficiario);
-                        
+
                         // Cantidad (por defecto 1)
                         int cantidad = productoNode.has("cantidad") && productoNode.get("cantidad").isNumber()
-                            ? productoNode.get("cantidad").asInt()
-                            : 1;
+                                ? productoNode.get("cantidad").asInt()
+                                : 1;
                         fp.setCantidad(cantidad);
-                        
+
                         // Precio unitario (por defecto el precio del producto)
                         double precioUnitario = productoNode.has("precio_unitario") && productoNode.get("precio_unitario").isNumber()
-                            ? productoNode.get("precio_unitario").asDouble()
-                            : producto.getPrecio();
+                                ? productoNode.get("precio_unitario").asDouble()
+                                : producto.getPrecio();
                         fp.setPrecio_unitario(precioUnitario);
-                        
+
                         // Subtotal
                         double subtotal = productoNode.has("subtotal") && productoNode.get("subtotal").isNumber()
-                            ? productoNode.get("subtotal").asDouble()
-                            : precioUnitario * cantidad;
+                                ? productoNode.get("subtotal").asDouble()
+                                : precioUnitario * cantidad;
                         fp.setSubtotal(subtotal);
-                        
+
                         // Guardar el producto de factura
                         facturaProductoService.createFacturaProducto(fp);
-                        
+
                     } catch (Exception e) {
                         // Continuar con el siguiente producto si hay error en uno
                         System.err.println("Error procesando producto en factura: " + e.getMessage());
@@ -262,7 +270,7 @@ public class FacturaServlet extends HttpServlet {
                     }
                 }
             }
-            
+
             sendSuccess(resp, creada);
 
         } catch (com.fasterxml.jackson.core.JsonProcessingException ex) {
@@ -281,12 +289,13 @@ public class FacturaServlet extends HttpServlet {
     protected void doPut(HttpServletRequest req, HttpServletResponse resp)
             throws IOException {
 
+        logger.info("[" + CODIGO_LOG + "003] doPut - inicio"); // CAMBIO LOG
         resp.setContentType("application/json");
         resp.setCharacterEncoding("UTF-8");
 
         try {
             String body = readBody(req);
-            
+
             // Parsear JSON para verificar qué campos están presentes
             ObjectMapper mapper = new ObjectMapper();
             JsonNode jsonNode = mapper.readTree(body);
@@ -307,30 +316,30 @@ public class FacturaServlet extends HttpServlet {
                 sendError(resp, "Factura no encontrada");
                 return;
             }
-            
+
             // Actualizar solo los campos enviados (actualización parcial)
             if (jsonNode.has("num_factura") && jsonNode.get("num_factura").isTextual()) {
                 existente.setNum_factura(jsonNode.get("num_factura").asText());
             }
-            
+
             if (jsonNode.has("total") && jsonNode.get("total").isNumber()) {
                 double nuevoTotal = jsonNode.get("total").asDouble();
                 if (nuevoTotal > 0) {
                     existente.setTotal(nuevoTotal);
                 }
             }
-            
+
             if (jsonNode.has("estado") && jsonNode.get("estado").isTextual()) {
                 String nuevoEstado = jsonNode.get("estado").asText();
                 if (nuevoEstado != null && !nuevoEstado.trim().isEmpty()) {
                     existente.setEstado(nuevoEstado);
                 }
             }
-            
+
             if (jsonNode.has("notas") && jsonNode.get("notas").isTextual()) {
                 existente.setNotas(jsonNode.get("notas").asText());
             }
-            
+
             if (jsonNode.has("fecha_emision") && jsonNode.get("fecha_emision").isTextual()) {
                 try {
                     String fechaStr = jsonNode.get("fecha_emision").asText();
@@ -354,7 +363,7 @@ public class FacturaServlet extends HttpServlet {
                     return;
                 }
             }
-            
+
             // Manejar relaciones si vienen en el JSON
             if (jsonNode.has("id_cliente") && jsonNode.get("id_cliente").isNumber()) {
                 Integer clienteId = jsonNode.get("id_cliente").asInt();
@@ -367,7 +376,7 @@ public class FacturaServlet extends HttpServlet {
                     return;
                 }
             }
-            
+
             if (jsonNode.has("id_empleado") && jsonNode.get("id_empleado").isNumber()) {
                 Integer empleadoId = jsonNode.get("id_empleado").asInt();
                 Empleado emp = empleadoService.findEmpleadoById(empleadoId);
@@ -399,6 +408,7 @@ public class FacturaServlet extends HttpServlet {
     protected void doDelete(HttpServletRequest req, HttpServletResponse resp)
             throws IOException {
 
+        logger.info("[" + CODIGO_LOG + "004] doDelete - inicio"); // CAMBIO LOG
         resp.setContentType("application/json");
         resp.setCharacterEncoding("UTF-8");
 

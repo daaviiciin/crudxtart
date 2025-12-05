@@ -6,36 +6,47 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
 import java.util.List;
+import java.util.logging.Logger;
 
 @ApplicationScoped
 public class EmpleadoService {
+
+
+    private static final Logger logger = Logger.getLogger(EmpleadoService.class.getName());
+    private static final String CODIGO_LOG = "SRVC-EMP-";
 
     @Inject
     EmpleadoRepository empleadoRepository;
 
     public List<Empleado> findAllEmpleados() {
+        logger.info("[" + CODIGO_LOG + "001] findAllEmpleados() - Inicio"); // CAMBIO LOG
         return empleadoRepository.findAllEmpleados();
     }
 
     public Empleado findEmpleadoById(Integer id) {
+        logger.info("[" + CODIGO_LOG + "002] findEmpleadoById() - Inicio"); // CAMBIO LOG
         return empleadoRepository.findEmpleadoById(id);
     }
 
     public Empleado findEmpleadoByEmail(String email) {
+        logger.info("[" + CODIGO_LOG + "003] findEmpleadoByEmail() - Inicio"); // CAMBIO LOG
         return empleadoRepository.findEmpleadoByEmail(email);
     }
 
     public Empleado createEmpleado(Empleado e) {
+        logger.info("[" + CODIGO_LOG + "004] createEmpleado() - Inicio"); // CAMBIO LOG
         validarEmpleado(e);
         return empleadoRepository.createEmpleado(e);
     }
 
     public Empleado upLocalDateEmpleado(Empleado e) {
+        logger.info("[" + CODIGO_LOG + "005] upLocalDateEmpleado() - Inicio"); // CAMBIO LOG
         validarEmpleado(e);
         return empleadoRepository.updateEmpleado(e);
     }
 
     public void deleteEmpleado(Integer id) {
+        logger.info("[" + CODIGO_LOG + "006] deleteEmpleado() - Inicio"); // CAMBIO LOG
         empleadoRepository.deletebyid(id);
     }
 

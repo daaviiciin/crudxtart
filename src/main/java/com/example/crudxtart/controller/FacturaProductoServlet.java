@@ -11,10 +11,16 @@ import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.util.logging.Logger; // CAMBIO LOG
 import java.util.List;
 
 @WebServlet("/factura_productos")
 public class FacturaProductoServlet extends HttpServlet {
+
+
+    // 1º Cambio para el log de errores
+    private static final Logger logger = Logger.getLogger(FacturaProductoServlet.class.getName());
+    private static final String CODIGO_LOG = "CTL-FPR-";
 
     @Inject
     private FacturaProductoService facturaProductoService;
@@ -27,6 +33,7 @@ public class FacturaProductoServlet extends HttpServlet {
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws IOException {
 
+        logger.info("[" + CODIGO_LOG + "001] doGet - inicio"); // CAMBIO LOG
         resp.setContentType("application/json");
         resp.setCharacterEncoding("UTF-8");
 
@@ -65,6 +72,7 @@ public class FacturaProductoServlet extends HttpServlet {
     protected void doPost(HttpServletRequest req, HttpServletResponse resp)
             throws IOException {
 
+        logger.info("[" + CODIGO_LOG + "002] doPost - inicio"); // CAMBIO LOG
         resp.setContentType("application/json");
         resp.setCharacterEncoding("UTF-8");
 
@@ -87,6 +95,7 @@ public class FacturaProductoServlet extends HttpServlet {
     protected void doPut(HttpServletRequest req, HttpServletResponse resp)
             throws IOException {
 
+        logger.info("[" + CODIGO_LOG + "003] doPut - inicio"); // CAMBIO LOG
         resp.setContentType("application/json");
         resp.setCharacterEncoding("UTF-8");
 
@@ -115,6 +124,7 @@ public class FacturaProductoServlet extends HttpServlet {
     protected void doDelete(HttpServletRequest req, HttpServletResponse resp)
             throws IOException {
 
+        logger.info("[" + CODIGO_LOG + "004] doDelete - inicio"); // CAMBIO LOG
         resp.setContentType("application/json");
         resp.setCharacterEncoding("UTF-8");
 

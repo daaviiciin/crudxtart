@@ -2,6 +2,7 @@ package com.example.crudxtart.controller;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.util.logging.Logger;
 
 import com.example.crudxtart.models.Cliente;
 import com.example.crudxtart.models.Empleado;
@@ -19,6 +20,11 @@ import jakarta.servlet.http.HttpSession;
 @WebServlet("/auth/login")
 public class LoginServlet extends HttpServlet {
 
+
+    // 1º Cambio para el log de errores
+    private static final Logger logger = Logger.getLogger(LoginServlet.class.getName());
+    private static final String CODIGO_LOG = "CTL-LGN-";
+
     @Inject
     private EmpleadoService empleadoService;
 
@@ -29,6 +35,7 @@ public class LoginServlet extends HttpServlet {
     protected void doPost(HttpServletRequest req, HttpServletResponse resp)
             throws IOException {
 
+        logger.info("[" + CODIGO_LOG + "002] doPost - inicio"); // CAMBIO LOG
         resp.setContentType("application/json;charset=UTF-8");
 
         try {

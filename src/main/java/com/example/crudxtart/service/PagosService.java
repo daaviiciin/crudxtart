@@ -2,6 +2,7 @@ package com.example.crudxtart.service;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.logging.Logger;
 
 import com.example.crudxtart.models.Factura;
 import com.example.crudxtart.models.Pagos;
@@ -14,19 +15,25 @@ import jakarta.transaction.Transactional;
 @ApplicationScoped
 public class PagosService
 {
+
+    private static final Logger logger = Logger.getLogger(PagosService.class.getName());
+    private static final String CODIGO_LOG = "SRV-PAG-";
+
     @Inject
     PagosRepository pagosRepository;
-    
+
     @Inject
     FacturaService facturaService;
 
     public List<Pagos> findAllPagos()
     {
+        logger.info("[" + CODIGO_LOG + "001] findAllPagos() - Inicio"); // CAMBIO LOG
         return pagosRepository.findAllPagos();
     }
 
     public Pagos findPagosById(Integer id)
     {
+        logger.info("[" + CODIGO_LOG + "001] findPagosById() - Inicio"); // CAMBIO LOG
         return pagosRepository.findPagosById(id);
     }
 
@@ -34,30 +41,33 @@ public class PagosService
     @Transactional
     public Pagos createPagos(Pagos p)
     {
+        logger.info("[" + CODIGO_LOG + "001] createPagos() - Inicio"); // CAMBIO LOG
         validarpagos(p);
         Pagos pagoCreado = pagosRepository.createPagos(p);
-        
-        if (pagoCreado.getEstado() != null && 
-            pagoCreado.getEstado().equalsIgnoreCase("PAGADA")) {
-            
+
+        if (pagoCreado.getEstado() != null &&
+                pagoCreado.getEstado().equalsIgnoreCase("PAGADA")) {
+
             Factura factura = pagoCreado.getFactura();
             if (factura != null && !factura.getEstado().equalsIgnoreCase("PAGADA")) {
                 factura.setEstado("PAGADA");
                 facturaService.updateFactura(factura);
             }
         }
-        
+
         return pagoCreado;
     }
 
     public Pagos upLocalDatePagos(Pagos p)
     {
+        logger.info("[" + CODIGO_LOG + "001] upLocalDatePagos() - Inicio"); // CAMBIO LOG
         validarpagos(p);
         return  pagosRepository.updatePagos(p);
     }
 
     public void deletePagos(int id)
     {
+        logger.info("[" + CODIGO_LOG + "001] deletePagos() - Inicio"); // CAMBIO LOG
         pagosRepository.deletebyid(id);
     }
 
@@ -75,18 +85,18 @@ public class PagosService
             List<Pagos> pagosExistentes = pagosRepository.findPagosByFacturaId(factura.getId_factura());
             Integer pagoIdActual = pago.getId_pago();
             double totalPagado = pagosExistentes.stream()
-                .filter(p -> p.getEstado() != null && 
+                    .filter(p -> p.getEstado() != null &&
                             p.getEstado().equalsIgnoreCase("PAGADA") &&
                             (pagoIdActual == null || !p.getId_pago().equals(pagoIdActual)))
-                .mapToDouble(Pagos::getImporte)
-                .sum();
-            
+                    .mapToDouble(Pagos::getImporte)
+                    .sum();
+
             double totalPendiente = factura.getTotal() - totalPagado;
-            
+
             if (pago.getImporte() > totalPendiente) {
                 throw new IllegalArgumentException(
-                    String.format("El importe del pago (%.2f) excede el total pendiente de la factura (%.2f)", 
-                        pago.getImporte(), totalPendiente)
+                        String.format("El importe del pago (%.2f) excede el total pendiente de la factura (%.2f)",
+                                pago.getImporte(), totalPendiente)
                 );
             }
         }
@@ -101,8 +111,8 @@ public class PagosService
         if (pago.getEstado() != null) {
             String estado = pago.getEstado().toUpperCase().trim();
             if (!estado.equals("PENDIENTE") && !estado.equals("PAGADA") && !estado.equals("CANCELADA")) {
-                throw new IllegalArgumentException("Estado inválido: " + pago.getEstado() + 
-                    ". Estados válidos: PENDIENTE, PAGADA, CANCELADA");
+                throw new IllegalArgumentException("Estado inválido: " + pago.getEstado() +
+                        ". Estados válidos: PENDIENTE, PAGADA, CANCELADA");
             }
         }
 
@@ -112,3 +122,4 @@ public class PagosService
         }
     }
 }
+

@@ -2,6 +2,7 @@ package com.example.crudxtart.controller;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.util.logging.Logger;
 import java.util.List;
 
 import com.example.crudxtart.models.Pagos;
@@ -21,6 +22,11 @@ import jakarta.servlet.http.HttpServletResponse;
 @WebServlet("/pagos")
 public class PagosServlet extends HttpServlet {
 
+
+    // 1º Cambio para el log de errores
+    private static final Logger logger = Logger.getLogger(PagosServlet.class.getName());
+    private static final String CODIGO_LOG = "CTL-PAG-";
+
     @Inject
     private PagosService pagosService;
 
@@ -35,6 +41,7 @@ public class PagosServlet extends HttpServlet {
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws IOException {
 
+        logger.info("[" + CODIGO_LOG + "001] doGet - inicio"); // CAMBIO LOG
         resp.setContentType("application/json");
         resp.setCharacterEncoding("UTF-8");
 
@@ -73,20 +80,21 @@ public class PagosServlet extends HttpServlet {
     protected void doPost(HttpServletRequest req, HttpServletResponse resp)
             throws IOException {
 
+        logger.info("[" + CODIGO_LOG + "002] doPost - inicio"); // CAMBIO LOG
         resp.setContentType("application/json");
         resp.setCharacterEncoding("UTF-8");
 
         try {
             String body = readBody(req);
-            
+
             // Parsear JSON para obtener campos
             ObjectMapper mapper = new ObjectMapper();
             JsonNode jsonNode = mapper.readTree(body);
-            
+
             // Crear nuevo objeto Pagos
             Pagos pago = new Pagos();
             pago.setId_pago(null); // Asegurar que el ID sea null para crear nuevo registro
-            
+
             // Extraer y validar campos básicos
             if (jsonNode.has("importe") && jsonNode.get("importe").isNumber()) {
                 pago.setImporte(jsonNode.get("importe").asDouble());
@@ -95,7 +103,7 @@ public class PagosServlet extends HttpServlet {
                 sendError(resp, "El campo 'importe' es obligatorio y debe ser un número");
                 return;
             }
-            
+
             if (jsonNode.has("metodo_pago") && jsonNode.get("metodo_pago").isTextual()) {
                 pago.setMetodo_pago(jsonNode.get("metodo_pago").asText());
             } else {
@@ -103,7 +111,7 @@ public class PagosServlet extends HttpServlet {
                 sendError(resp, "El campo 'metodo_pago' es obligatorio");
                 return;
             }
-            
+
             if (jsonNode.has("estado") && jsonNode.get("estado").isTextual()) {
                 pago.setEstado(jsonNode.get("estado").asText());
             } else {
@@ -111,7 +119,7 @@ public class PagosServlet extends HttpServlet {
                 sendError(resp, "El campo 'estado' es obligatorio");
                 return;
             }
-            
+
             // Manejar fecha_pago (o fecha)
             if (jsonNode.has("fecha_pago") && jsonNode.get("fecha_pago").isTextual()) {
                 try {
@@ -133,7 +141,7 @@ public class PagosServlet extends HttpServlet {
                 // Si no viene fecha, establecerla automáticamente
                 pago.setFecha_pago(java.time.LocalDate.now());
             }
-            
+
             // Manejar factura (obligatorio)
             if (jsonNode.has("id_factura") && jsonNode.get("id_factura").isNumber()) {
                 Integer facturaId = jsonNode.get("id_factura").asInt();
@@ -152,14 +160,14 @@ public class PagosServlet extends HttpServlet {
             }
 
             Pagos creado = pagosService.createPagos(pago);
-            
+
             // Verificar que el ID se generó correctamente
             if (creado.getId_pago() == null) {
                 resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
                 sendError(resp, "Error: No se pudo generar el ID del pago");
                 return;
             }
-            
+
             sendSuccess(resp, creado);
 
         } catch (com.fasterxml.jackson.core.JsonProcessingException ex) {
@@ -178,12 +186,13 @@ public class PagosServlet extends HttpServlet {
     protected void doPut(HttpServletRequest req, HttpServletResponse resp)
             throws IOException {
 
+        logger.info("[" + CODIGO_LOG + "003] doPut - inicio"); // CAMBIO LOG
         resp.setContentType("application/json");
         resp.setCharacterEncoding("UTF-8");
 
         try {
             String body = readBody(req);
-            
+
             // Parsear JSON para verificar qué campos están presentes
             ObjectMapper mapper = new ObjectMapper();
             JsonNode jsonNode = mapper.readTree(body);
@@ -204,7 +213,7 @@ public class PagosServlet extends HttpServlet {
                 sendError(resp, "Pago no encontrado");
                 return;
             }
-            
+
             // Actualizar solo los campos enviados (actualización parcial)
             if (jsonNode.has("importe") && jsonNode.get("importe").isNumber()) {
                 double nuevoImporte = jsonNode.get("importe").asDouble();
@@ -212,21 +221,21 @@ public class PagosServlet extends HttpServlet {
                     existente.setImporte(nuevoImporte);
                 }
             }
-            
+
             if (jsonNode.has("metodo_pago") && jsonNode.get("metodo_pago").isTextual()) {
                 String nuevoMetodo = jsonNode.get("metodo_pago").asText();
                 if (nuevoMetodo != null && !nuevoMetodo.trim().isEmpty()) {
                     existente.setMetodo_pago(nuevoMetodo);
                 }
             }
-            
+
             if (jsonNode.has("estado") && jsonNode.get("estado").isTextual()) {
                 String nuevoEstado = jsonNode.get("estado").asText();
                 if (nuevoEstado != null && !nuevoEstado.trim().isEmpty()) {
                     existente.setEstado(nuevoEstado);
                 }
             }
-            
+
             if (jsonNode.has("fecha_pago") && jsonNode.get("fecha_pago").isTextual()) {
                 try {
                     String fechaStr = jsonNode.get("fecha_pago").asText();
@@ -250,7 +259,7 @@ public class PagosServlet extends HttpServlet {
                     return;
                 }
             }
-            
+
             // Manejar factura si viene en el JSON
             if (jsonNode.has("id_factura") && jsonNode.get("id_factura").isNumber()) {
                 Integer facturaId = jsonNode.get("id_factura").asInt();
@@ -283,6 +292,7 @@ public class PagosServlet extends HttpServlet {
     protected void doDelete(HttpServletRequest req, HttpServletResponse resp)
             throws IOException {
 
+        logger.info("[" + CODIGO_LOG + "004] doDelete - inicio"); // CAMBIO LOG
         resp.setContentType("application/json");
         resp.setCharacterEncoding("UTF-8");
 

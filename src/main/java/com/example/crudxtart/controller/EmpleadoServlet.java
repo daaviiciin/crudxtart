@@ -2,6 +2,7 @@ package com.example.crudxtart.controller;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.util.logging.Logger; // CAMBIO LOG
 import java.time.LocalDate;
 import java.util.List;
 
@@ -19,6 +20,11 @@ import jakarta.servlet.http.HttpServletResponse;
 @WebServlet("/empleados")
 public class EmpleadoServlet extends HttpServlet {
 
+
+    // 1º Cambio para el log de errores
+    private static final Logger logger = Logger.getLogger(EmpleadoServlet.class.getName());
+    private static final String CODIGO_LOG = "CTL-EMP-";
+
     @Inject
     private EmpleadoService empleadoService;
 
@@ -32,6 +38,7 @@ public class EmpleadoServlet extends HttpServlet {
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws IOException {
 
+        logger.info("[" + CODIGO_LOG + "001] doGet - inicio"); // CAMBIO LOG
         resp.setContentType("application/json");
         resp.setCharacterEncoding("UTF-8");
 
@@ -70,6 +77,7 @@ public class EmpleadoServlet extends HttpServlet {
     protected void doPost(HttpServletRequest req, HttpServletResponse resp)
             throws IOException {
 
+        logger.info("[" + CODIGO_LOG + "002] doPost - inicio"); // CAMBIO LOG
         resp.setContentType("application/json");
         resp.setCharacterEncoding("UTF-8");
 
@@ -95,8 +103,8 @@ public class EmpleadoServlet extends HttpServlet {
             if (emp.getId_rol() != null && emp.getId_rol().getId_rol() != null) {
                 // Cargar el rol desde la base de datos
                 try {
-                    com.example.crudxtart.models.Roles_empleado rol = 
-                        rolesService.findRolById(emp.getId_rol().getId_rol());
+                    com.example.crudxtart.models.Roles_empleado rol =
+                            rolesService.findRolById(emp.getId_rol().getId_rol());
                     if (rol != null) {
                         emp.setId_rol(rol);
                     } else {
@@ -112,14 +120,14 @@ public class EmpleadoServlet extends HttpServlet {
             }
 
             Empleado creado = empleadoService.createEmpleado(emp);
-            
+
             // Verificar que el ID se generó correctamente
             if (creado.getId_empleado() == null) {
                 resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
                 sendError(resp, "Error: No se pudo generar el ID del empleado");
                 return;
             }
-            
+
             sendSuccess(resp, creado);
 
         } catch (com.fasterxml.jackson.core.JsonProcessingException ex) {
@@ -138,6 +146,7 @@ public class EmpleadoServlet extends HttpServlet {
     protected void doPut(HttpServletRequest req, HttpServletResponse resp)
             throws IOException {
 
+        logger.info("[" + CODIGO_LOG + "003] doPut - inicio"); // CAMBIO LOG
         resp.setContentType("application/json");
         resp.setCharacterEncoding("UTF-8");
 
@@ -158,7 +167,7 @@ public class EmpleadoServlet extends HttpServlet {
                 sendError(resp, "Empleado no encontrado");
                 return;
             }
-            
+
             // Actualizar solo los campos enviados (si vienen null, mantener los existentes)
             if (emp.getNombre() != null) {
                 existente.setNombre(emp.getNombre());
@@ -181,8 +190,8 @@ public class EmpleadoServlet extends HttpServlet {
             // Manejar id_rol si viene en el JSON
             if (emp.getId_rol() != null && emp.getId_rol().getId_rol() != null) {
                 // Cargar el rol desde la base de datos
-                com.example.crudxtart.models.Roles_empleado rol = 
-                    rolesService.findRolById(emp.getId_rol().getId_rol());
+                com.example.crudxtart.models.Roles_empleado rol =
+                        rolesService.findRolById(emp.getId_rol().getId_rol());
                 if (rol != null) {
                     existente.setId_rol(rol);
                 }
@@ -207,6 +216,7 @@ public class EmpleadoServlet extends HttpServlet {
     protected void doDelete(HttpServletRequest req, HttpServletResponse resp)
             throws IOException {
 
+        logger.info("[" + CODIGO_LOG + "004] doDelete - inicio"); // CAMBIO LOG
         resp.setContentType("application/json");
         resp.setCharacterEncoding("UTF-8");
 
@@ -220,7 +230,7 @@ public class EmpleadoServlet extends HttpServlet {
             }
 
             Integer id = Integer.parseInt(idParam);
-            
+
             // Verificar que el empleado existe antes de eliminar
             Empleado emp = empleadoService.findEmpleadoById(id);
             if (emp == null) {
@@ -228,7 +238,7 @@ public class EmpleadoServlet extends HttpServlet {
                 sendError(resp, "Empleado no encontrado");
                 return;
             }
-            
+
             empleadoService.deleteEmpleado(id);
 
             // Devolver null en data para indicar éxito sin datos
