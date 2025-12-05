@@ -64,8 +64,18 @@ public class ClienteService {
             throw new IllegalArgumentException("El teléfono supera la longitud máxima permitida.");
         }
 
-        if (cliente.getTipo_cliente() != null && cliente.getTipo_cliente().length() > 50) {
-            throw new IllegalArgumentException("El tipo de cliente supera la longitud máxima permitida.");
+        if (cliente.getTipo_cliente() != null && !cliente.getTipo_cliente().trim().isEmpty()) {
+            String tipo = cliente.getTipo_cliente().trim().toUpperCase();
+            if (tipo.equals("PERSONA") || tipo.equals("PARTICULAR")) {
+                cliente.setTipo_cliente("PARTICULAR");
+            } else if (tipo.equals("EMPRESA")) {
+                cliente.setTipo_cliente("EMPRESA");
+            } else if (!tipo.equals("PARTICULAR") && !tipo.equals("EMPRESA")) {
+                throw new IllegalArgumentException("Tipo de cliente inválido: " + cliente.getTipo_cliente() + 
+                    ". Valores válidos: PARTICULAR, EMPRESA");
+            } else {
+                cliente.setTipo_cliente(tipo);
+            }
         }
     }
 }

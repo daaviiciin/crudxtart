@@ -4,15 +4,15 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.List;
 
-import com.example.crudxtart.models.Presupuestos;
-import com.example.crudxtart.models.PresupuestoProducto;
-import com.example.crudxtart.models.Factura;
-import com.example.crudxtart.models.Empleado;
 import com.example.crudxtart.models.Cliente;
+import com.example.crudxtart.models.Empleado;
+import com.example.crudxtart.models.Factura;
+import com.example.crudxtart.models.PresupuestoProducto;
+import com.example.crudxtart.models.Presupuestos;
 import com.example.crudxtart.models.Producto;
-import com.example.crudxtart.service.PresupuestosService;
-import com.example.crudxtart.service.EmpleadoService;
 import com.example.crudxtart.service.ClienteService;
+import com.example.crudxtart.service.EmpleadoService;
+import com.example.crudxtart.service.PresupuestosService;
 import com.example.crudxtart.service.ProductoService;
 import com.example.crudxtart.utils.JsonUtil;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -298,6 +298,9 @@ public class PresupuestosServlet extends HttpServlet {
                 return;
             }
             
+            // Guardar estado original para que el servicio pueda detectar cambios
+            String estadoOriginal = existente.getEstado();
+            
             // Actualizar solo los campos enviados (actualización parcial)
             if (jsonNode.has("presupuesto") && jsonNode.get("presupuesto").isNumber()) {
                 double nuevoPresupuesto = jsonNode.get("presupuesto").asDouble();
@@ -326,7 +329,15 @@ public class PresupuestosServlet extends HttpServlet {
                 }
             }
             
-            if (jsonNode.has("fecha_cierre") && jsonNode.get("fecha_cierre").isTextual()) {
+            // Solo procesar fecha_cierre del JSON si NO está cambiando a APROBADO
+            // Si cambia a APROBADO, dejar que el servicio asigne la fecha automáticamente
+            boolean cambiaAAprobado = jsonNode.has("estado") && 
+                                    jsonNode.get("estado").isTextual() &&
+                                    jsonNode.get("estado").asText().equalsIgnoreCase("APROBADO") &&
+                                    (estadoOriginal == null || !estadoOriginal.equalsIgnoreCase("APROBADO"));
+            
+            // Si viene fecha_cierre en el JSON y NO está cambiando a APROBADO, procesarla
+            if (jsonNode.has("fecha_cierre") && jsonNode.get("fecha_cierre").isTextual() && !cambiaAAprobado) {
                 try {
                     String fechaStr = jsonNode.get("fecha_cierre").asText();
                     if (fechaStr != null && !fechaStr.trim().isEmpty()) {
@@ -339,6 +350,14 @@ public class PresupuestosServlet extends HttpServlet {
                     sendError(resp, "Formato de fecha_cierre inválido. Use formato YYYY-MM-DD");
                     return;
                 }
+            }
+            // Si NO viene fecha_cierre en el JSON y el estado actual es APROBADO, preservar la fecha existente
+            // (el servicio lo asigna automáticamente si es null y el estado es APROBADO)
+            else if (!jsonNode.has("fecha_cierre") && 
+                        existente.getEstado() != null &&
+                        existente.getEstado().equalsIgnoreCase("APROBADO") &&
+                        existente.getFecha_cierre() != null) {
+                // Preservar la fecha_cierre existente si el estado ya era APROBADO
             }
             
             if (jsonNode.has("id_empleado") && jsonNode.get("id_empleado").isNumber()) {

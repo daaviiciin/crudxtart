@@ -45,8 +45,21 @@ public class ProductoService {
             throw new IllegalArgumentException("El precio no puede ser negativo.");
         }
 
-        if (producto.getCategoria() != null && producto.getCategoria().trim().isEmpty()) {
-            throw new IllegalArgumentException("La categoría no puede ser solo espacios en blanco.");
+        // Normalizar y validar categoria
+        if (producto.getCategoria() != null && !producto.getCategoria().trim().isEmpty()) {
+            String categoria = producto.getCategoria().trim().toUpperCase();
+            // Normalizar valores
+            if (categoria.equals("CICLO FORMATIVO") || categoria.equals("CICLO_FORMATIVO")) {
+                producto.setCategoria("CICLO FORMATIVO");
+            } else if (categoria.equals("FORMACION COMPLEMENTARIA") || categoria.equals("FORMACIÓN COMPLEMENTARIA") || 
+                       categoria.equals("FORMACION_COMPLEMENTARIA") || categoria.equals("FORMACIÓN_COMPLEMENTARIA")) {
+                producto.setCategoria("FORMACION COMPLEMENTARIA");
+            } else if (!categoria.equals("CICLO FORMATIVO") && !categoria.equals("FORMACION COMPLEMENTARIA")) {
+                throw new IllegalArgumentException("Categoría inválida: " + producto.getCategoria() + 
+                    ". Valores válidos: CICLO FORMATIVO, FORMACION COMPLEMENTARIA");
+            } else {
+                producto.setCategoria(categoria);
+            }
         }
     }
 }
