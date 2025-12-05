@@ -1,4 +1,4 @@
-package com.example.crudxtart.servlet;
+package com.example.crudxtart.controller;
 
 import com.example.crudxtart.models.Roles_empleado;
 import com.example.crudxtart.service.Roles_empleadoService;

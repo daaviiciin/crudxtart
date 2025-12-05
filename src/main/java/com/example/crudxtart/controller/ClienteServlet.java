@@ -1,13 +1,13 @@
-package com.example.crudxtart.servlet;
+package com.example.crudxtart.controller;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.time.LocalDate;
 import java.util.List;
 
+import com.example.crudxtart.models.Cliente;
 import com.example.crudxtart.models.Empleado;
+import com.example.crudxtart.service.ClienteService;
 import com.example.crudxtart.service.EmpleadoService;
-import com.example.crudxtart.service.Roles_empleadoService;
 import com.example.crudxtart.utils.JsonUtil;
 
 import jakarta.inject.Inject;
@@ -16,14 +16,14 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-@WebServlet("/empleados")
-public class EmpleadoServlet extends HttpServlet {
+@WebServlet("/clientes")
+public class ClienteServlet extends HttpServlet {
+
+    @Inject
+    private ClienteService clienteService;
 
     @Inject
     private EmpleadoService empleadoService;
-
-    @Inject
-    private Roles_empleadoService rolesService;
 
     // ============================================================
     // GET (todos o por id)
@@ -36,26 +36,32 @@ public class EmpleadoServlet extends HttpServlet {
         resp.setCharacterEncoding("UTF-8");
 
         try {
+            // GET /clientes?id=7
             String idParam = req.getParameter("id");
-
-            // GET /empleados
             if (idParam != null) {
                 Integer id = Integer.parseInt(idParam);
-                Empleado emp = empleadoService.findEmpleadoById(id);
+                Cliente cli = clienteService.findClienteById(id);
 
-                if (emp == null) {
+                if (cli == null) {
                     resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
-                    sendError(resp, "Empleado no encontrado");
+                    sendError(resp, "Cliente no encontrado");
                     return;
                 }
 
-                sendSuccess(resp, emp);
+                sendSuccess(resp, cli);
                 return;
             }
 
-            // GET /empleados (todos)
-            List<Empleado> empleados = empleadoService.findAllEmpleados();
-            sendSuccess(resp, empleados);
+            // GET /clientes?nombre=X&email=Y...
+            String nombre = req.getParameter("nombre");
+            String email = req.getParameter("email");
+            String telefono = req.getParameter("telefono");
+
+            List<Cliente> clientes = (nombre != null || email != null || telefono != null)
+                    ? clienteService.findClientesByFilters(nombre, email, telefono)
+                    : clienteService.findAllClientes();
+
+            sendSuccess(resp, clientes);
 
         } catch (Exception ex) {
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
@@ -75,48 +81,37 @@ public class EmpleadoServlet extends HttpServlet {
 
         try {
             String body = readBody(req);
-            Empleado emp = JsonUtil.fromJson(body, Empleado.class);
-
+            Cliente cli = JsonUtil.fromJson(body, Cliente.class);
+            
             // Asegurar que el ID sea null para crear nuevo registro
-            emp.setId_empleado(null);
-
-            // Si no viene fecha_ingreso, establecerla automáticamente
-            if (emp.getFecha_ingreso() == null) {
-                emp.setFecha_ingreso(LocalDate.now());
+            cli.setId_cliente(null);
+            
+            // Si no viene fecha_alta, establecerla automáticamente
+            if (cli.getFecha_alta() == null) {
+                cli.setFecha_alta(java.time.LocalDate.now());
             }
-
-            // Si no viene estado, establecerlo a "activo" por defecto
-            if (emp.getEstado() == null || emp.getEstado().trim().isEmpty()) {
-                emp.setEstado("activo");
-            }
-
-            // Manejar id_rol si viene en el JSON
-            // El frontend puede enviar: {"id_rol": {"id_rol": 1}}
-            if (emp.getId_rol() != null && emp.getId_rol().getId_rol() != null) {
-                // Cargar el rol desde la base de datos
-                try {
-                    com.example.crudxtart.models.Roles_empleado rol = 
-                        rolesService.findRolById(emp.getId_rol().getId_rol());
-                    if (rol != null) {
-                        emp.setId_rol(rol);
-                    } else {
-                        // Si el rol no existe, establecer a null
-                        emp.setId_rol(null);
-                    }
-                } catch (Exception ex) {
-                    // Si no se puede cargar el rol, establecer a null
-                    emp.setId_rol(null);
+            
+            // Manejar empleado_responsable si viene en el JSON
+            // El frontend puede enviar: {"empleado_responsable": {"id_empleado": 4}}
+            if (cli.getEmpleado_responsable() != null && cli.getEmpleado_responsable().getId_empleado() != null) {
+                // Cargar el empleado desde la base de datos
+                Empleado emp = empleadoService.findEmpleadoById(cli.getEmpleado_responsable().getId_empleado());
+                if (emp != null) {
+                    cli.setEmpleado_responsable(emp);
+                } else {
+                    // Si el empleado no existe, establecer a null
+                    cli.setEmpleado_responsable(null);
                 }
             } else {
-                emp.setId_rol(null);
+                cli.setEmpleado_responsable(null);
             }
-
-            Empleado creado = empleadoService.createEmpleado(emp);
+            
+            Cliente creado = clienteService.createCliente(cli);
             
             // Verificar que el ID se generó correctamente
-            if (creado.getId_empleado() == null) {
+            if (creado.getId_cliente() == null) {
                 resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-                sendError(resp, "Error: No se pudo generar el ID del empleado");
+                sendError(resp, "Error: No se pudo generar el ID del cliente");
                 return;
             }
             
@@ -143,52 +138,46 @@ public class EmpleadoServlet extends HttpServlet {
 
         try {
             String body = readBody(req);
-            Empleado emp = JsonUtil.fromJson(body, Empleado.class);
+            Cliente cli = JsonUtil.fromJson(body, Cliente.class);
 
-            if (emp.getId_empleado() == null) {
+            if (cli.getId_cliente() == null) {
                 resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-                sendError(resp, "El campo id_empleado es obligatorio para actualizar");
+                sendError(resp, "El campo id_cliente es obligatorio para actualizar");
                 return;
             }
 
-            // Cargar el empleado existente para preservar campos no enviados
-            Empleado existente = empleadoService.findEmpleadoById(emp.getId_empleado());
+            // Asegurar que empleado_responsable sea null (no debe venir en JSON)
+            cli.setEmpleado_responsable(null);
+            
+            // Cargar el cliente existente para preservar campos no enviados
+            Cliente existente = clienteService.findClienteById(cli.getId_cliente());
             if (existente == null) {
                 resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
-                sendError(resp, "Empleado no encontrado");
+                sendError(resp, "Cliente no encontrado");
                 return;
             }
             
             // Actualizar solo los campos enviados (si vienen null, mantener los existentes)
-            if (emp.getNombre() != null) {
-                existente.setNombre(emp.getNombre());
+            if (cli.getNombre() != null) {
+                existente.setNombre(cli.getNombre());
             }
-            if (emp.getEmail() != null) {
-                existente.setEmail(emp.getEmail());
+            if (cli.getEmail() != null) {
+                existente.setEmail(cli.getEmail());
             }
-            if (emp.getTelefono() != null) {
-                existente.setTelefono(emp.getTelefono());
+            if (cli.getTelefono() != null) {
+                existente.setTelefono(cli.getTelefono());
             }
-            if (emp.getPassword() != null) {
-                existente.setPassword(emp.getPassword());
+            if (cli.getPassword() != null) {
+                existente.setPassword(cli.getPassword());
             }
-            if (emp.getFecha_ingreso() != null) {
-                existente.setFecha_ingreso(emp.getFecha_ingreso());
+            if (cli.getTipo_cliente() != null) {
+                existente.setTipo_cliente(cli.getTipo_cliente());
             }
-            if (emp.getEstado() != null) {
-                existente.setEstado(emp.getEstado());
-            }
-            // Manejar id_rol si viene en el JSON
-            if (emp.getId_rol() != null && emp.getId_rol().getId_rol() != null) {
-                // Cargar el rol desde la base de datos
-                com.example.crudxtart.models.Roles_empleado rol = 
-                    rolesService.findRolById(emp.getId_rol().getId_rol());
-                if (rol != null) {
-                    existente.setId_rol(rol);
-                }
+            if (cli.getFecha_alta() != null) {
+                existente.setFecha_alta(cli.getFecha_alta());
             }
 
-            Empleado actualizado = empleadoService.upLocalDateEmpleado(existente);
+            Cliente actualizado = clienteService.upLocalDateCliente(existente);
             sendSuccess(resp, actualizado);
 
         } catch (com.fasterxml.jackson.core.JsonProcessingException ex) {
@@ -221,19 +210,22 @@ public class EmpleadoServlet extends HttpServlet {
 
             Integer id = Integer.parseInt(idParam);
             
-            // Verificar que el empleado existe antes de eliminar
-            Empleado emp = empleadoService.findEmpleadoById(id);
-            if (emp == null) {
+            // Verificar que el cliente existe antes de eliminar
+            Cliente cli = clienteService.findClienteById(id);
+            if (cli == null) {
                 resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
-                sendError(resp, "Empleado no encontrado");
+                sendError(resp, "Cliente no encontrado");
                 return;
             }
             
-            empleadoService.deleteEmpleado(id);
+            clienteService.deleteCliente(id);
 
             // Devolver null en data para indicar éxito sin datos
             sendSuccess(resp, null);
 
+        } catch (NumberFormatException ex) {
+            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            sendError(resp, "ID inválido: debe ser un número");
         } catch (Exception ex) {
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             sendError(resp, ex.getMessage());
@@ -245,9 +237,9 @@ public class EmpleadoServlet extends HttpServlet {
     // ============================================================
     private String readBody(HttpServletRequest req) throws IOException {
         StringBuilder sb = new StringBuilder();
-        try (BufferedReader br = req.getReader()) {
+        try (BufferedReader reader = req.getReader()) {
             String line;
-            while ((line = br.readLine()) != null) sb.append(line);
+            while ((line = reader.readLine()) != null) sb.append(line);
         }
         return sb.toString();
     }
@@ -269,8 +261,13 @@ public class EmpleadoServlet extends HttpServlet {
             this.data = data;
         }
 
-        public boolean isSuccess() { return success; }
-        public Object getData() { return data; }
+        public boolean isSuccess() {
+            return success;
+        }
+
+        public Object getData() {
+            return data;
+        }
     }
 
     private static class ErrorMsg {
@@ -280,6 +277,8 @@ public class EmpleadoServlet extends HttpServlet {
             this.error = error;
         }
 
-        public String getError() { return error; }
+        public String getError() {
+            return error;
+        }
     }
 }

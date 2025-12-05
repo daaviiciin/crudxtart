@@ -1,4 +1,4 @@
-package com.example.crudxtart.servlet;
+package com.example.crudxtart.controller;
 
 import com.example.crudxtart.models.FacturaProducto;
 import com.example.crudxtart.service.FacturaProductoService;

@@ -1,4 +1,4 @@
-package com.example.crudxtart.servlet;
+package com.example.crudxtart.controller;
 
 import java.io.BufferedReader;
 import java.io.IOException;
