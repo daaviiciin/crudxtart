@@ -5,7 +5,9 @@ import java.io.IOException;
 import java.util.logging.Logger;
 
 import com.example.crudxtart.models.Empleado;
+import com.example.crudxtart.models.Cliente;
 import com.example.crudxtart.service.EmpleadoService;
+import com.example.crudxtart.service.ClienteService;
 import com.example.crudxtart.utils.JsonUtil;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -27,6 +29,9 @@ public class LoginServlet extends HttpServlet {
 
     @Inject
     private EmpleadoService empleadoService;
+    
+    @Inject
+    private ClienteService clienteService;
 
     // ============================================================
     // POST (LOGIN)
@@ -63,27 +68,43 @@ public class LoginServlet extends HttpServlet {
 
             logger.info("[" + CODIGO_LOG + "003] Validando credenciales de: " + email);
 
-            // Buscar empleado
+            // Buscar primero como empleado
             Empleado empleado = empleadoService.findEmpleadoByEmail(email);
-
-            if (empleado == null) {
+            
+            if (empleado != null) {
+                // Validar password de empleado
+                if (!empleado.getPassword().equals(password)) {
+                    logger.severe("[" + CODIGO_LOG + "005] ERROR - Password incorrecta");
+                    resp.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                    sendError(resp, "Contraseña incorrecta");
+                    return;
+                }
+                
+                logger.info("[" + CODIGO_LOG + "006] Login exitoso (empleado) para: " + email);
+                sendSuccess(resp, empleado);
+                return;
+            }
+            
+            // Si no es empleado, buscar como cliente
+            Cliente cliente = clienteService.findClienteByEmail(email);
+            
+            if (cliente == null) {
                 logger.severe("[" + CODIGO_LOG + "004] ERROR - Usuario no encontrado");
                 resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
                 sendError(resp, "Usuario no encontrado");
                 return;
             }
-
-            // Validar password
-            if (!empleado.getPassword().equals(password)) {
+            
+            // Validar password de cliente
+            if (!cliente.getPassword().equals(password)) {
                 logger.severe("[" + CODIGO_LOG + "005] ERROR - Password incorrecta");
                 resp.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                 sendError(resp, "Contraseña incorrecta");
                 return;
             }
-
-            logger.info("[" + CODIGO_LOG + "006] Login exitoso para: " + email);
-
-            sendSuccess(resp, empleado);
+            
+            logger.info("[" + CODIGO_LOG + "006] Login exitoso (cliente) para: " + email);
+            sendSuccess(resp, cliente);
 
         } catch (com.fasterxml.jackson.core.JsonProcessingException ex) {
             logger.severe("[" + CODIGO_LOG + "007] ERROR JSON Login: " + ex.getMessage());
