@@ -17,7 +17,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import com.example.crudxtart.models.Factura;
@@ -40,8 +39,6 @@ import jakarta.servlet.http.HttpServletResponse;
 @WebServlet("/informes/*")
 public class InformesServlet extends HttpServlet {
 
-
-    // 1º Cambio para el log de errores
     private static final Logger logger = Logger.getLogger(InformesServlet.class.getName());
     private static final String CODIGO_LOG = "CTL-INF-";
 
@@ -62,7 +59,8 @@ public class InformesServlet extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        logger.info("[" + CODIGO_LOG + "001] doGet - inicio"); // CAMBIO LOG
+
+        logger.info("[" + CODIGO_LOG + "001] doGet - inicio");
         resp.setContentType("application/json");
         resp.setCharacterEncoding("UTF-8");
 
@@ -77,30 +75,34 @@ public class InformesServlet extends HttpServlet {
         LocalDate hasta = parseDate(req.getParameter("hasta"));
 
         try {
-            System.out.println("[INFORME] Petición recibida: " + path + " - desde: " + desde + ", hasta: " + hasta);
+            logger.info("[" + CODIGO_LOG + "010] Petición recibida: " + path + " | desde=" + desde + " | hasta=" + hasta);
 
             Object resultado = null;
 
-            // Ejecutar informes en hilos secundarios para no bloquear el hilo principal
             switch (path) {
 
                 case "/ventas-empleado":
+                    logger.info("[" + CODIGO_LOG + "020] Ejecutando informe ventas-empleado");
                     resultado = ejecutarConExecutor(() -> handleVentasPorEmpleado(desde, hasta));
                     break;
 
                 case "/presupuestos-estado":
+                    logger.info("[" + CODIGO_LOG + "030] Ejecutando informe presupuestos-estado");
                     resultado = ejecutarConExecutor(() -> handleEstadoPresupuestos(desde, hasta));
                     break;
 
                 case "/facturacion-mensual":
+                    logger.info("[" + CODIGO_LOG + "040] Ejecutando informe facturacion-mensual");
                     resultado = ejecutarConExecutor(() -> handleFacturacionMensual(desde, hasta));
                     break;
 
                 case "/ventas-producto":
+                    logger.info("[" + CODIGO_LOG + "050] Ejecutando informe ventas-producto");
                     resultado = ejecutarConExecutor(() -> handleVentasPorProducto(desde, hasta));
                     break;
 
                 case "/ratio-conversion":
+                    logger.info("[" + CODIGO_LOG + "060] Ejecutando informe ratio-conversion");
                     resultado = ejecutarConExecutor(() -> handleRatioConversion(desde, hasta));
                     break;
 
@@ -110,50 +112,19 @@ public class InformesServlet extends HttpServlet {
                     return;
             }
 
-            if (resultado == null) {
-                // Si el resultado es null, devolver estructura vacía según el tipo de informe
-                switch (path) {
-                    case "/ventas-empleado":
-                    case "/ventas-producto":
-                        resultado = new ArrayList<>();
-                        break;
-                    case "/presupuestos-estado":
-                    case "/facturacion-mensual":
-                    case "/ratio-conversion":
-                        resultado = new HashMap<>();
-                        break;
-                    default:
-                        resultado = new ArrayList<>();
-                        break;
-                }
-            }
-            System.out.println("[INFORME] Enviando respuesta - resultado tipo: " + (resultado != null ? resultado.getClass().getSimpleName() : "null") +
-                    ", tamaño: " + (resultado instanceof List ? ((List<?>) resultado).size() :
-                    resultado instanceof Map ? ((Map<?, ?>) resultado).size() : "N/A"));
+            logger.info("[" + CODIGO_LOG + "090] Informe generado correctamente. Serializando respuesta...");
             sendSuccess(resp, resultado);
 
         } catch (Exception ex) {
-            System.err.println("[INFORME] EXCEPCIÓN CAPTURADA: " + ex.getClass().getSimpleName());
-            System.err.println("[INFORME] Mensaje: " + ex.getMessage());
-            ex.printStackTrace(); // Log para debugging
+            logger.severe("[" + CODIGO_LOG + "999] EXCEPCION INFORME: " + ex.getMessage());
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            String errorMsg = ex.getMessage();
-            if (errorMsg == null || errorMsg.trim().isEmpty()) {
-                errorMsg = ex.getClass().getSimpleName() + ": Error desconocido al generar informe";
-            } else {
-                errorMsg = "Error al generar informe: " + errorMsg;
-            }
-            try {
-                sendError(resp, errorMsg);
-            } catch (IOException ioEx) {
-                ioEx.printStackTrace();
-            }
+            sendError(resp, "Error al generar informe: " + ex.getMessage());
         }
     }
 
     @Override
     public void destroy() {
-        // Cerrar el ExecutorService cuando el servlet se destruye
+        logger.info("[" + CODIGO_LOG + "998] destroy() - cerrando executor");
         if (executor != null && !executor.isShutdown()) {
             executor.shutdown();
             try {
@@ -167,193 +138,78 @@ public class InformesServlet extends HttpServlet {
         }
     }
 
-    private <T> T ejecutarConThread(Callable<T> tarea) throws Exception {
-        AtomicReference<T> resultado = new AtomicReference<>();
-        AtomicReference<Exception> excepcion = new AtomicReference<>();
+    // ------------------------------------HANDLE INFORMES----------------------------------------
 
-        Thread hilo = new Thread(() -> {
-            try {
-                resultado.set(tarea.call());
-            } catch (Exception e) {
-                excepcion.set(e);
-            }
-        });
-        hilo.start();
-        try {
-            hilo.join();
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new Exception("Error ejecutando hilo: " + e.getMessage(), e);
-        }
 
-        if (excepcion.get() != null) {
-            throw excepcion.get();
-        }
-
-        return resultado.get();
-    }
-
-    private <T> T ejecutarConExecutor(Callable<T> tarea) throws Exception {
-        Future<T> future = executor.submit(tarea);
-        try {
-            return future.get(); // Espera a que termine la tarea y devuelve el resultado
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new Exception("Error ejecutando tarea: interrupción", e);
-        } catch (ExecutionException e) {
-            Throwable causa = e.getCause();
-            if (causa instanceof Exception) {
-                throw (Exception) causa;
-            }
-            throw new Exception("Error ejecutando tarea: " + e.getMessage(), e);
-        }
-    }
-
-    // ----------------------- HANDLE INFORMES ------------------------
     private List<Map<String, Object>> handleVentasPorEmpleado(LocalDate desde, LocalDate hasta) {
-        System.out.println("[INFORME] ========================================");
-        System.out.println("[INFORME] Iniciando handleVentasPorEmpleado");
-        System.out.println("[INFORME] Parámetros: desde=" + desde + ", hasta=" + hasta);
-        System.out.println("[INFORME] ========================================");
 
-        // Crear EntityManager en el hilo secundario
+        logger.info("[" + CODIGO_LOG + "100] handleVentasPorEmpleado - inicio");
+
         EntityManager em = emf.createEntityManager();
         EntityTransaction tx = null;
+
         try {
             tx = em.getTransaction();
             tx.begin();
 
             List<Factura> facturas = em.createQuery(
-                    "SELECT f FROM Factura f " +
-                            "LEFT JOIN FETCH f.cliente_pagador " +
-                            "LEFT JOIN FETCH f.empleado",
+                    "SELECT f FROM Factura f LEFT JOIN FETCH f.cliente_pagador LEFT JOIN FETCH f.empleado",
                     Factura.class
             ).getResultList();
 
             tx.commit();
 
-            System.out.println("[INFORME] Total facturas encontradas en BD: " + facturas.size());
+            logger.info("[" + CODIGO_LOG + "110] Total facturas: " + facturas.size());
 
-            // Mostrar todas las fechas de facturas para debugging
-            if (facturas.size() > 0) {
-                System.out.println("[INFORME] Fechas de todas las facturas:");
-                facturas.forEach(f -> {
-                    System.out.println("  - Factura ID: " + f.getId_factura() +
-                            ", Fecha: " + f.getFecha_emision() +
-                            ", Empleado: " + (f.getEmpleado() != null ? f.getEmpleado().getNombre() : "null") +
-                            ", Total: " + f.getTotal());
-                });
-            }
-
-            // Filtrar por fechas
-            int facturasAntesFiltroDesde = facturas.size();
             if (desde != null) {
                 facturas = facturas.stream()
-                        .filter(f -> {
-                            if (f.getFecha_emision() == null) {
-                                System.out.println("[INFORME] Factura ID " + f.getId_factura() + " tiene fecha_emision NULL, excluida");
-                                return false;
-                            }
-                            boolean pasa = !f.getFecha_emision().isBefore(desde);
-                            if (!pasa) {
-                                System.out.println("[INFORME] Factura ID " + f.getId_factura() + " fecha " + f.getFecha_emision() + " es anterior a desde " + desde);
-                            }
-                            return pasa;
-                        })
+                        .filter(f -> f.getFecha_emision() != null && !f.getFecha_emision().isBefore(desde))
                         .collect(Collectors.toList());
-                System.out.println("[INFORME] Después de filtrar desde " + desde + ": " + facturas.size() + " facturas (de " + facturasAntesFiltroDesde + ")");
             }
 
-            int facturasAntesFiltroHasta = facturas.size();
             if (hasta != null) {
                 facturas = facturas.stream()
-                        .filter(f -> {
-                            if (f.getFecha_emision() == null) {
-                                return false;
-                            }
-                            boolean pasa = !f.getFecha_emision().isAfter(hasta);
-                            if (!pasa) {
-                                System.out.println("[INFORME] Factura ID " + f.getId_factura() + " fecha " + f.getFecha_emision() + " es posterior a hasta " + hasta);
-                            }
-                            return pasa;
-                        })
+                        .filter(f -> f.getFecha_emision() != null && !f.getFecha_emision().isAfter(hasta))
                         .collect(Collectors.toList());
-                System.out.println("[INFORME] Después de filtrar hasta " + hasta + ": " + facturas.size() + " facturas (de " + facturasAntesFiltroHasta + ")");
             }
 
-            // Debug: mostrar facturas que pasaron el filtro
-            if (facturas.size() > 0) {
-                System.out.println("[INFORME] Facturas que pasaron el filtro:");
-                facturas.forEach(f -> System.out.println("  - Factura ID: " + f.getId_factura() +
-                        ", Fecha: " + f.getFecha_emision() +
-                        ", Empleado: " + (f.getEmpleado() != null ? f.getEmpleado().getNombre() : "null")));
-            } else {
-                System.out.println("[INFORME] No hay facturas que pasen el filtro de fechas");
-            }
+            logger.info("[" + CODIGO_LOG + "120] Facturas después de filtros: " + facturas.size());
 
-            // Agrupar por empleado
             Map<String, Double> acumulado = new HashMap<>();
-            int facturasConEmpleado = 0;
             for (Factura f : facturas) {
-                if (f.getEmpleado() == null) {
-                    continue;
-                }
-                facturasConEmpleado++;
-
-                String nombre = safeUpperFirst(f.getEmpleado().getNombre());
-                double total = f.getTotal();
-                acumulado.merge(nombre, total, Double::sum);
+                if (f.getEmpleado() == null) continue;
+                acumulado.merge(safeUpperFirst(f.getEmpleado().getNombre()), f.getTotal(), Double::sum);
             }
 
-            System.out.println("[INFORME] Facturas con empleado: " + facturasConEmpleado + ", Empleados únicos: " + acumulado.size());
-
-            // Construir resultado
             List<Map<String, Object>> resultado = new ArrayList<>();
-            for (Map.Entry<String, Double> e : acumulado.entrySet()) {
+            for (Map.Entry<String, Double> entry : acumulado.entrySet()) {
                 Map<String, Object> item = new HashMap<>();
-                item.put("nombre", e.getKey());
-                item.put("total", e.getValue());
+                item.put("nombre", entry.getKey());
+                item.put("total", entry.getValue());
                 resultado.add(item);
             }
 
-            System.out.println("[INFORME] Resultado final: " + resultado.size() + " empleados");
-
-            // Debug--> mostrar el contenido del resultado antes de devolverlo
-            System.out.println("[INFORME] Contenido del resultado:");
-            for (Map<String, Object> item : resultado) {
-                System.out.println("  - " + item);
-            }
-
-            // Intentar serializar a JSON para verificar
-            try {
-                String jsonTest = JsonUtil.toJson(resultado);
-                System.out.println("[INFORME] JSON serializado (primeros 500 chars): " +
-                        (jsonTest.length() > 500 ? jsonTest.substring(0, 500) + "..." : jsonTest));
-            } catch (Exception e) {
-                System.err.println("[INFORME] Error al serializar resultado a JSON: " + e.getMessage());
-                e.printStackTrace();
-            }
-
+            logger.info("[" + CODIGO_LOG + "130] Resultado empleados: " + resultado.size());
             return resultado;
+
         } catch (Exception e) {
-            System.err.println("Error en handleVentasPorEmpleado: " + e.getMessage());
-            e.printStackTrace();
-            if (tx != null && tx.isActive()) {
-                tx.rollback();
-            }
-            throw new RuntimeException("Error al generar informe de ventas por empleado: " + e.getMessage(), e);
+            logger.severe("[" + CODIGO_LOG + "199] Error en handleVentasPorEmpleado: " + e.getMessage());
+            if (tx != null && tx.isActive()) tx.rollback();
+            throw new RuntimeException("Error informe ventas-empleado", e);
         } finally {
-            if (em.isOpen()) {
-                em.close();
-            }
+            if (em.isOpen()) em.close();
         }
     }
 
+
+
     private Map<String, Integer> handleEstadoPresupuestos(LocalDate desde, LocalDate hasta) {
-        System.out.println("[INFORME] Iniciando handleEstadoPresupuestos - desde: " + desde + ", hasta: " + hasta);
+
+        logger.info("[" + CODIGO_LOG + "200] handleEstadoPresupuestos - inicio");
 
         EntityManager em = emf.createEntityManager();
         EntityTransaction tx = null;
+
         try {
             tx = em.getTransaction();
             tx.begin();
@@ -363,7 +219,7 @@ public class InformesServlet extends HttpServlet {
 
             tx.commit();
 
-            System.out.println("[INFORME] Total presupuestos encontrados: " + lista.size());
+            logger.info("[" + CODIGO_LOG + "210] Total presupuestos: " + lista.size());
 
             if (desde != null)
                 lista = lista.stream().filter(p -> p.getFecha_apertura() != null && !p.getFecha_apertura().isBefore(desde))
@@ -378,57 +234,52 @@ public class InformesServlet extends HttpServlet {
             conteo.put("RECHAZADO", 0);
 
             for (Presupuestos p : lista) {
-                String raw = p.getEstado() != null ? p.getEstado().trim().toUpperCase(Locale.ROOT) : "";
-                String estadoNorm;
-                // Normalizar a estados válidos: PENDIENTE, APROBADO, RECHAZADO
-                if (raw.equals("APROBADO") || raw.equals("APROBADA")) {
-                    estadoNorm = "APROBADO";
-                } else if (raw.equals("RECHAZADO") || raw.equals("RECHAZADA")) {
-                    estadoNorm = "RECHAZADO";
-                } else {
-                    estadoNorm = "PENDIENTE"; // Por defecto
-                }
-                conteo.merge(estadoNorm, 1, Integer::sum);
+                String estado = p.getEstado() != null ? p.getEstado().trim().toUpperCase(Locale.ROOT) : "";
+                if (estado.equals("APROBADO") || estado.equals("APROBADA"))
+                    conteo.merge("APROBADO", 1, Integer::sum);
+                else if (estado.equals("RECHAZADO") || estado.equals("RECHAZADA"))
+                    conteo.merge("RECHAZADO", 1, Integer::sum);
+                else
+                    conteo.merge("PENDIENTE", 1, Integer::sum);
             }
 
-            System.out.println("[INFORME] Resultado estado presupuestos: " + conteo);
+            logger.info("[" + CODIGO_LOG + "220] Resultado: " + conteo);
             return conteo;
+
         } catch (Exception e) {
-            System.err.println("Error en handleEstadoPresupuestos: " + e.getMessage());
-            e.printStackTrace();
-            if (tx != null && tx.isActive()) {
-                tx.rollback();
-            }
-            throw new RuntimeException("Error al generar informe de estado de presupuestos: " + e.getMessage(), e);
+            logger.severe("[" + CODIGO_LOG + "299] Error en handleEstadoPresupuestos: " + e.getMessage());
+            if (tx != null && tx.isActive()) tx.rollback();
+            throw new RuntimeException("Error informe estado-presupuestos", e);
         } finally {
-            if (em.isOpen()) {
-                em.close();
-            }
+            if (em.isOpen()) em.close();
         }
     }
 
+
+
     private Map<String, Double> handleFacturacionMensual(LocalDate desde, LocalDate hasta) {
-        System.out.println("[INFORME] Iniciando handleFacturacionMensual - desde: " + desde + ", hasta: " + hasta);
+
+        logger.info("[" + CODIGO_LOG + "300] handleFacturacionMensual - inicio");
 
         EntityManager em = emf.createEntityManager();
         EntityTransaction tx = null;
+
         try {
             tx = em.getTransaction();
             tx.begin();
 
-            List<Factura> facturas = em.createQuery(
-                    "SELECT f FROM Factura f",
-                    Factura.class
-            ).getResultList();
+            List<Factura> facturas = em.createQuery("SELECT f FROM Factura f", Factura.class)
+                    .getResultList();
 
             tx.commit();
 
-            System.out.println("[INFORME] Total facturas encontradas: " + facturas.size());
+            logger.info("[" + CODIGO_LOG + "310] Total facturas: " + facturas.size());
 
             if (desde != null)
                 facturas = facturas.stream()
                         .filter(f -> f.getFecha_emision() != null && !f.getFecha_emision().isBefore(desde))
                         .collect(Collectors.toList());
+
             if (hasta != null)
                 facturas = facturas.stream()
                         .filter(f -> f.getFecha_emision() != null && !f.getFecha_emision().isAfter(hasta))
@@ -436,38 +287,35 @@ public class InformesServlet extends HttpServlet {
 
             Map<String, Double> porMes = new HashMap<>();
             for (Factura f : facturas) {
-                if (f.getFecha_emision() == null)
-                    continue;
-                String clave = YearMonth.from(f.getFecha_emision()).toString();
-                porMes.merge(clave, f.getTotal(), Double::sum);
+                if (f.getFecha_emision() == null) continue;
+                porMes.merge(YearMonth.from(f.getFecha_emision()).toString(), f.getTotal(), Double::sum);
             }
 
-            System.out.println("[INFORME] Resultado facturación mensual: " + porMes.size() + " meses");
+            logger.info("[" + CODIGO_LOG + "320] Resultado facturación mensual: " + porMes.size() + " meses");
             return porMes;
+
         } catch (Exception e) {
-            System.err.println("Error en handleFacturacionMensual: " + e.getMessage());
-            e.printStackTrace();
-            if (tx != null && tx.isActive()) {
-                tx.rollback();
-            }
-            throw new RuntimeException("Error al generar informe de facturación mensual: " + e.getMessage(), e);
+            logger.severe("[" + CODIGO_LOG + "399] Error en handleFacturacionMensual: " + e.getMessage());
+            if (tx != null && tx.isActive()) tx.rollback();
+            throw new RuntimeException("Error informe facturación mensual", e);
         } finally {
-            if (em.isOpen()) {
-                em.close();
-            }
+            if (em.isOpen()) em.close();
         }
     }
 
+
+
     private List<Map<String, Object>> handleVentasPorProducto(LocalDate desde, LocalDate hasta) {
-        System.out.println("[INFORME] Iniciando handleVentasPorProducto - desde: " + desde + ", hasta: " + hasta);
+
+        logger.info("[" + CODIGO_LOG + "400] handleVentasPorProducto - inicio");
 
         EntityManager em = emf.createEntityManager();
         EntityTransaction tx = null;
+
         try {
             tx = em.getTransaction();
             tx.begin();
 
-            // Maldita mayuscula
             List<FacturaProducto> items = em.createQuery(
                     "SELECT fp FROM FacturaProducto fp " +
                             "LEFT JOIN FETCH fp.factura " +
@@ -477,27 +325,9 @@ public class InformesServlet extends HttpServlet {
 
             tx.commit();
 
-            System.out.println("[INFORME] Total FacturaProducto encontrados: " + items.size());
-
-            // Si no hay datos, intentar consulta directa a la tabla
-            if (items.isEmpty()) {
-                tx = em.getTransaction();
-                tx.begin();
-                Long count = (Long) em.createQuery("SELECT COUNT(fp) FROM FacturaProducto fp").getSingleResult();
-                tx.commit();
-                System.out.println("[INFORME] COUNT directo de FacturaProducto: " + count);
-
-                // Verificar si hay facturas
-                tx = em.getTransaction();
-                tx.begin();
-                Long facturasCount = (Long) em.createQuery("SELECT COUNT(f) FROM Factura f").getSingleResult();
-                tx.commit();
-                System.out.println("[INFORME] Total facturas en BD: " + facturasCount);
-            }
+            logger.info("[" + CODIGO_LOG + "410] Total FacturaProducto: " + items.size());
 
             Map<String, Double> acumulado = new HashMap<>();
-            int itemsProcesados = 0;
-            int itemsFiltrados = 0;
 
             for (FacturaProducto fp : items) {
                 Factura factura = fp.getFactura();
@@ -505,21 +335,17 @@ public class InformesServlet extends HttpServlet {
                     LocalDate fecha = factura.getFecha_emision();
                     if ((desde != null && fecha != null && fecha.isBefore(desde)) ||
                             (hasta != null && fecha != null && fecha.isAfter(hasta))) {
-                        itemsFiltrados++;
                         continue;
                     }
                 }
-                if (fp.getProducto() == null) {
-                    itemsFiltrados++;
-                    continue;
-                }
-                itemsProcesados++;
-                String nombre = safeUpperFirst(fp.getProducto().getNombre());
-                double subtotal = fp.getSubtotal() == 0 ? fp.getCantidad() * fp.getPrecio_unitario() : fp.getSubtotal();
-                acumulado.merge(nombre, subtotal, Double::sum);
-            }
+                if (fp.getProducto() == null) continue;
 
-            System.out.println("[INFORME] Items procesados: " + itemsProcesados + ", filtrados: " + itemsFiltrados + ", productos únicos: " + acumulado.size());
+                double subtotal = fp.getSubtotal() == 0 ?
+                        fp.getCantidad() * fp.getPrecio_unitario() :
+                        fp.getSubtotal();
+
+                acumulado.merge(safeUpperFirst(fp.getProducto().getNombre()), subtotal, Double::sum);
+            }
 
             List<Map<String, Object>> resultado = new ArrayList<>();
             for (Map.Entry<String, Double> e : acumulado.entrySet()) {
@@ -529,53 +355,47 @@ public class InformesServlet extends HttpServlet {
                 resultado.add(item);
             }
 
-            System.out.println("[INFORME] Resultado final ventas por producto: " + resultado.size() + " productos");
+            logger.info("[" + CODIGO_LOG + "420] Resultado ventas productos: " + resultado.size());
             return resultado;
+
         } catch (Exception e) {
-            // Log detallado del error para debugging
-            System.err.println("Error en handleVentasPorProducto: " + e.getMessage());
-            e.printStackTrace();
-            if (tx != null && tx.isActive()) {
-                tx.rollback();
-            }
-            throw new RuntimeException("Error al generar informe de ventas por producto: " + e.getMessage(), e);
+            logger.severe("[" + CODIGO_LOG + "499] Error en handleVentasPorProducto: " + e.getMessage());
+            if (tx != null && tx.isActive()) tx.rollback();
+            throw new RuntimeException("Error informe ventas-producto", e);
         } finally {
-            if (em.isOpen()) {
-                em.close();
-            }
+            if (em.isOpen()) em.close();
         }
     }
 
+
+
     private Map<String, Integer> handleRatioConversion(LocalDate desde, LocalDate hasta) {
-        System.out.println("[INFORME] Iniciando handleRatioConversion - desde: " + desde + ", hasta: " + hasta);
+
+        logger.info("[" + CODIGO_LOG + "500] handleRatioConversion - inicio");
 
         EntityManager em = emf.createEntityManager();
         EntityTransaction tx = null;
+
         try {
             tx = em.getTransaction();
             tx.begin();
 
-            List<Presupuestos> lista = em.createQuery("SELECT p FROM Presupuestos p", Presupuestos.class)
+            List<Presupuestos> lista = em.createQuery(
+                            "SELECT p FROM Presupuestos p", Presupuestos.class)
                     .getResultList();
 
             tx.commit();
 
-            System.out.println("[INFORME] Total presupuestos encontrados: " + lista.size());
+            logger.info("[" + CODIGO_LOG + "510] Total presupuestos: " + lista.size());
 
             int convertidos = 0, rechazados = 0, pendientes = 0, otros = 0;
 
             for (Presupuestos p : lista) {
-                String estado = p.getEstado() != null ? p.getEstado().toUpperCase(Locale.ROOT).trim() : "";
-                // Estados válidos: PENDIENTE, APROBADO, RECHAZADO
-                if (estado.equals("APROBADO")) {
-                    convertidos++;
-                } else if (estado.equals("RECHAZADO")) {
-                    rechazados++;
-                } else if (estado.equals("PENDIENTE")) {
-                    pendientes++;
-                } else {
-                    otros++; // Estados no reconocidos
-                }
+                String estado = p.getEstado() != null ? p.getEstado().trim().toUpperCase(Locale.ROOT) : "";
+                if (estado.equals("APROBADO")) convertidos++;
+                else if (estado.equals("RECHAZADO")) rechazados++;
+                else if (estado.equals("PENDIENTE")) pendientes++;
+                else otros++;
             }
 
             Map<String, Integer> resultado = new HashMap<>();
@@ -584,26 +404,24 @@ public class InformesServlet extends HttpServlet {
             resultado.put("Pendientes", pendientes);
             resultado.put("Otros", otros);
 
-            System.out.println("[INFORME] Resultado ratio conversión: " + resultado);
+            logger.info("[" + CODIGO_LOG + "520] Resultado ratio conversión: " + resultado);
             return resultado;
+
         } catch (Exception e) {
-            System.err.println("Error en handleRatioConversion: " + e.getMessage());
-            e.printStackTrace();
-            if (tx != null && tx.isActive()) {
-                tx.rollback();
-            }
-            throw new RuntimeException("Error al generar informe de ratio de conversión: " + e.getMessage(), e);
+            logger.severe("[" + CODIGO_LOG + "599] Error en handleRatioConversion: " + e.getMessage());
+            if (tx != null && tx.isActive()) tx.rollback();
+            throw new RuntimeException("Error informe ratio-conversión", e);
         } finally {
-            if (em.isOpen()) {
-                em.close();
-            }
+            if (em.isOpen()) em.close();
         }
     }
 
-    // ------------------------- HELPERS --------------------------
+
+
+    // ---------------------------------------HELPERS-------------------------------------------------
+
     private LocalDate parseDate(String raw) {
-        if (raw == null || raw.trim().isEmpty())
-            return null;
+        if (raw == null || raw.trim().isEmpty()) return null;
         try {
             return LocalDate.parse(raw.trim(), DATE_FMT);
         } catch (DateTimeParseException e) {
@@ -611,11 +429,26 @@ public class InformesServlet extends HttpServlet {
         }
     }
 
+    private <T> T ejecutarConExecutor(Callable<T> tarea) throws Exception {
+        Future<T> future = executor.submit(tarea);
+        try {
+            return future.get();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new Exception("Ejecución interrumpida", e);
+        } catch (ExecutionException e) {
+            Throwable causa = e.getCause();
+            if (causa instanceof Exception)
+                throw (Exception) causa;
+            throw new Exception("Error ejecutando tarea", e);
+        }
+    }
+
     private String safeUpperFirst(String value) {
-        if (value == null)
-            return "Desconocido";
+        if (value == null) return "Desconocido";
         String trimmed = value.trim();
-        return trimmed.isEmpty() ? "Desconocido" : trimmed.substring(0, 1).toUpperCase() + trimmed.substring(1);
+        return trimmed.isEmpty() ? "Desconocido" :
+                trimmed.substring(0, 1).toUpperCase() + trimmed.substring(1);
     }
 
     private void sendSuccess(HttpServletResponse resp, Object data) throws IOException {
@@ -629,33 +462,17 @@ public class InformesServlet extends HttpServlet {
     private static class Response {
         final boolean success;
         final Object data;
-
         Response(boolean success, Object data) {
             this.success = success;
             this.data = data;
         }
-
-        // Getters necesarios para Jackson
-        public boolean isSuccess() {
-            return success;
-        }
-
-        public Object getData() {
-            return data;
-        }
+        public boolean isSuccess() { return success; }
+        public Object getData() { return data; }
     }
 
     private static class ErrorMsg {
         final String error;
-
-        ErrorMsg(String error) {
-            this.error = error;
-        }
-
-        // Getter necesario para Jackson
-        public String getError() {
-            return error;
-        }
+        ErrorMsg(String error) { this.error = error; }
+        public String getError() { return error; }
     }
-
 }

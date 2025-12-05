@@ -28,7 +28,6 @@ import jakarta.servlet.http.HttpServletResponse;
 @WebServlet("/facturas")
 public class FacturaServlet extends HttpServlet {
 
-
     // 1º Cambio para el log de errores
     private static final Logger logger = Logger.getLogger(FacturaServlet.class.getName());
     private static final String CODIGO_LOG = "CTL-FAC-";
@@ -47,7 +46,6 @@ public class FacturaServlet extends HttpServlet {
 
     @Inject
     private FacturaProductoService facturaProductoService;
-
 
     // ============================================================
     // GET (todos o por id)
@@ -436,6 +434,8 @@ public class FacturaServlet extends HttpServlet {
     // Helpers
     // ============================================================
     private String readBody(HttpServletRequest req) throws IOException {
+        // CAMBIO LOG helper
+        logger.fine("[" + CODIGO_LOG + "005] readBody - leyendo cuerpo de la petición");
         StringBuilder sb = new StringBuilder();
         try (BufferedReader br = req.getReader()) {
             String line;
@@ -445,10 +445,14 @@ public class FacturaServlet extends HttpServlet {
     }
 
     private void sendSuccess(HttpServletResponse resp, Object data) throws IOException {
+        // CAMBIO LOG helper
+        logger.fine("[" + CODIGO_LOG + "006] sendSuccess - enviando respuesta de éxito");
         resp.getWriter().write(JsonUtil.toJson(new Response(true, data)));
     }
 
     private void sendError(HttpServletResponse resp, String msg) throws IOException {
+        // CAMBIO LOG helper
+        logger.fine("[" + CODIGO_LOG + "007] sendError - enviando error: " + msg);
         resp.getWriter().write(JsonUtil.toJson(new Response(false, new ErrorMsg(msg))));
     }
 

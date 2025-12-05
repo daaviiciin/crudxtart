@@ -20,7 +20,7 @@ import jakarta.servlet.http.HttpServletResponse;
 @WebServlet("/clientes")
 public class ClienteServlet extends HttpServlet {
 
-    // 1º Cambio para el log de errores
+    // logger
     private static final Logger logger = Logger.getLogger(ClienteServlet.class.getName());
     private static final String CODIGO_LOG = "CTL-CLI-";
 
@@ -36,9 +36,9 @@ public class ClienteServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws IOException {
-        // 2ºcambio para el log de errores (log de entrada)
-        logger.info("[" + CODIGO_LOG + "001] doGet - inicio. pathInfo=" + req.getPathInfo()
-                + ", id=" + req.getParameter("id"));
+
+        // LOG de entrada
+        logger.info("[" + CODIGO_LOG + "001] doGet - inicio. id=" + req.getParameter("id"));
 
         resp.setContentType("application/json");
         resp.setCharacterEncoding("UTF-8");
@@ -65,21 +65,15 @@ public class ClienteServlet extends HttpServlet {
             String email = req.getParameter("email");
             String telefono = req.getParameter("telefono");
 
-            if ((nombre != null && !nombre.isEmpty()) ||
-                    (email != null && !email.isEmpty()) ||
-                    (telefono != null && !telefono.isEmpty())) {
+            List<Cliente> clientes = (nombre != null || email != null || telefono != null)
+                    ? clienteService.findClientesByFilters(nombre, email, telefono)
+                    : clienteService.findAllClientes();
 
-                List<Cliente> filtrados =
-                        clienteService.findClientesByFilters(nombre, email, telefono);
-                sendSuccess(resp, filtrados);
-                return;
-            }
-
-            // Si no hay filtros ni id, devolver todos
-            List<Cliente> clientes = clienteService.findAllClientes();
             sendSuccess(resp, clientes);
 
         } catch (Exception ex) {
+            // LOG de error GET genérico
+            logger.severe("[" + CODIGO_LOG + "008] ERROR doGet Clientes: " + ex.getMessage());
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             sendError(resp, ex.getMessage());
         }
@@ -91,14 +85,15 @@ public class ClienteServlet extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp)
             throws IOException {
-        // 3º cambio para el log de errores (es lo mismo que el 2º cambio pero para doPost)
+
+        // LOG de entrada
         logger.info("[" + CODIGO_LOG + "002] doPost - inicio");
 
         resp.setContentType("application/json");
         resp.setCharacterEncoding("UTF-8");
 
         try {
-            String body = readBody(req);
+            String body = readBody(req); // disparará el LOG 005
             Cliente cli = JsonUtil.fromJson(body, Cliente.class);
 
             // Asegurar que el ID sea null para crear nuevo registro
@@ -111,7 +106,9 @@ public class ClienteServlet extends HttpServlet {
 
             // Manejar empleado_responsable si viene en el JSON
             // El frontend puede enviar: {"empleado_responsable": {"id_empleado": 4}}
-            if (cli.getEmpleado_responsable() != null && cli.getEmpleado_responsable().getId_empleado() != null) {
+            if (cli.getEmpleado_responsable() != null &&
+                    cli.getEmpleado_responsable().getId_empleado() != null) {
+
                 // Cargar el empleado desde la base de datos
                 Empleado emp = empleadoService.findEmpleadoById(
                         cli.getEmpleado_responsable().getId_empleado());
@@ -122,7 +119,6 @@ public class ClienteServlet extends HttpServlet {
                     cli.setEmpleado_responsable(null);
                 }
             } else {
-                // Si no se envía empleado_responsable, establecer a null
                 cli.setEmpleado_responsable(null);
             }
 
@@ -138,9 +134,13 @@ public class ClienteServlet extends HttpServlet {
             sendSuccess(resp, creado);
 
         } catch (com.fasterxml.jackson.core.JsonProcessingException ex) {
+            // LOG de error de formato JSON
+            logger.severe("[" + CODIGO_LOG + "009] ERROR JSON doPost Clientes: " + ex.getMessage());
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             sendError(resp, "Error en el formato JSON: " + ex.getMessage());
         } catch (Exception ex) {
+            // LOG de error genérico POST
+            logger.severe("[" + CODIGO_LOG + "010] ERROR doPost Clientes: " + ex.getMessage());
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             sendError(resp, ex.getMessage());
         }
@@ -152,7 +152,8 @@ public class ClienteServlet extends HttpServlet {
     @Override
     protected void doPut(HttpServletRequest req, HttpServletResponse resp)
             throws IOException {
-        // 4º Cambio (log de entrada a doPut con código único)
+
+        // LOG de entrada
         logger.info("[" + CODIGO_LOG + "003] doPut - inicio");
 
         resp.setContentType("application/json");
@@ -203,9 +204,13 @@ public class ClienteServlet extends HttpServlet {
             sendSuccess(resp, actualizado);
 
         } catch (com.fasterxml.jackson.core.JsonProcessingException ex) {
+            // LOG de error JSON PUT
+            logger.severe("[" + CODIGO_LOG + "011] ERROR JSON doPut Clientes: " + ex.getMessage());
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             sendError(resp, "Error en el formato JSON: " + ex.getMessage());
         } catch (Exception ex) {
+            // LOG de error genérico PUT
+            logger.severe("[" + CODIGO_LOG + "012] ERROR doPut Clientes: " + ex.getMessage());
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             sendError(resp, ex.getMessage());
         }
@@ -217,7 +222,8 @@ public class ClienteServlet extends HttpServlet {
     @Override
     protected void doDelete(HttpServletRequest req, HttpServletResponse resp)
             throws IOException {
-        // 5º Cambio: log de entrada a doDelete con código único
+
+        // LOG de entrada
         logger.info("[" + CODIGO_LOG + "004] doDelete - inicio. id=" + req.getParameter("id"));
 
         resp.setContentType("application/json");
@@ -242,16 +248,19 @@ public class ClienteServlet extends HttpServlet {
                 return;
             }
 
-            // Eliminar el cliente
             clienteService.deleteCliente(id);
 
             // Devolver null en data para indicar éxito sin datos
             sendSuccess(resp, null);
 
         } catch (NumberFormatException ex) {
+            // LOG de error de formato de ID
+            logger.severe("[" + CODIGO_LOG + "013] ERROR doDelete Clientes - ID inválido: " + ex.getMessage());
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             sendError(resp, "ID inválido: debe ser un número");
         } catch (Exception ex) {
+            // LOG de error genérico DELETE
+            logger.severe("[" + CODIGO_LOG + "014] ERROR doDelete Clientes: " + ex.getMessage());
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             sendError(resp, ex.getMessage());
         }
@@ -261,7 +270,7 @@ public class ClienteServlet extends HttpServlet {
     // Helpers
     // ============================================================
     private String readBody(HttpServletRequest req) throws IOException {
-        // 6º Cambio: log fine para trazar lectura del cuerpo de la petición
+        // LOG de traza de lectura de body
         logger.fine("[" + CODIGO_LOG + "005] readBody - leyendo cuerpo de la petición");
         StringBuilder sb = new StringBuilder();
         try (BufferedReader reader = req.getReader()) {
@@ -272,13 +281,13 @@ public class ClienteServlet extends HttpServlet {
     }
 
     private void sendSuccess(HttpServletResponse resp, Object dataObj) throws IOException {
-        // 7º Cambio: log fine para trazar envío de respuesta correcta
+        // LOG de envío de éxito
         logger.fine("[" + CODIGO_LOG + "006] sendSuccess - enviando respuesta de éxito");
         resp.getWriter().write(JsonUtil.toJson(new Response(true, dataObj)));
     }
 
     private void sendError(HttpServletResponse resp, String msg) throws IOException {
-        // 8º Cambio: log fine para trazar envío de error
+        // LOG de envío de error
         logger.fine("[" + CODIGO_LOG + "007] sendError - enviando error: " + msg);
         resp.getWriter().write(JsonUtil.toJson(new Response(false, new ErrorMsg(msg))));
     }

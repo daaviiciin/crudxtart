@@ -3,6 +3,7 @@ package com.example.crudxtart.controller;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.List;
+import java.util.logging.Logger;
 
 import com.example.crudxtart.models.Producto;
 import com.example.crudxtart.service.ProductoService;
@@ -19,6 +20,12 @@ import jakarta.servlet.http.HttpServletResponse;
 @WebServlet("/productos")
 public class ProductoServlet extends HttpServlet {
 
+    // ============================================================
+    // LOGGING
+    // ============================================================
+    private static final Logger logger = Logger.getLogger(ProductoServlet.class.getName());
+    private static final String CODIGO_LOG = "CTL-PRD-";
+
     @Inject
     private ProductoService productoService;
 
@@ -28,6 +35,8 @@ public class ProductoServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws IOException {
+
+        logger.info("[" + CODIGO_LOG + "001] doGet Productos - inicio. id=" + req.getParameter("id"));
 
         resp.setContentType("application/json");
         resp.setCharacterEncoding("UTF-8");
@@ -55,9 +64,11 @@ public class ProductoServlet extends HttpServlet {
             sendSuccess(resp, productos);
 
         } catch (NumberFormatException ex) {
+            logger.severe("[" + CODIGO_LOG + "008] ERROR doGet Productos - ID inválido: " + ex.getMessage());
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             sendError(resp, "ID inválido: debe ser un número");
         } catch (Exception ex) {
+            logger.severe("[" + CODIGO_LOG + "009] ERROR doGet Productos: " + ex.getMessage());
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             sendError(resp, ex.getMessage());
         }
@@ -70,34 +81,38 @@ public class ProductoServlet extends HttpServlet {
     protected void doPost(HttpServletRequest req, HttpServletResponse resp)
             throws IOException {
 
+        logger.info("[" + CODIGO_LOG + "002] doPost Productos - inicio");
+
         resp.setContentType("application/json");
         resp.setCharacterEncoding("UTF-8");
 
         try {
             String body = readBody(req);
             Producto prod = JsonUtil.fromJson(body, Producto.class);
-            
+
             // Asegurar que el ID sea null para crear nuevo registro
             prod.setId_producto(null);
-            
+
             // Si no viene activo, establecerlo a true por defecto
             // (el campo boolean no puede ser null, pero podemos asegurarnos)
-            
+
             Producto creado = productoService.createProducto(prod);
-            
+
             // Verificar que el ID se generó correctamente
             if (creado.getId_producto() == null) {
                 resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
                 sendError(resp, "Error: No se pudo generar el ID del producto");
                 return;
             }
-            
+
             sendSuccess(resp, creado);
 
         } catch (com.fasterxml.jackson.core.JsonProcessingException ex) {
+            logger.severe("[" + CODIGO_LOG + "010] ERROR JSON doPost Productos: " + ex.getMessage());
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             sendError(resp, "Error en el formato JSON: " + ex.getMessage());
         } catch (Exception ex) {
+            logger.severe("[" + CODIGO_LOG + "011] ERROR doPost Productos: " + ex.getMessage());
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             sendError(resp, ex.getMessage());
         }
@@ -110,16 +125,18 @@ public class ProductoServlet extends HttpServlet {
     protected void doPut(HttpServletRequest req, HttpServletResponse resp)
             throws IOException {
 
+        logger.info("[" + CODIGO_LOG + "003] doPut Productos - inicio");
+
         resp.setContentType("application/json");
         resp.setCharacterEncoding("UTF-8");
 
         try {
             String body = readBody(req);
-            
+
             // Parsear JSON para verificar qué campos están presentes
             ObjectMapper mapper = new ObjectMapper();
             JsonNode jsonNode = mapper.readTree(body);
-            
+
             // Deserializar el producto
             Producto prod = JsonUtil.fromJson(body, Producto.class);
 
@@ -129,14 +146,14 @@ public class ProductoServlet extends HttpServlet {
                 return;
             }
 
-            // Cargar el producto existente para preservar campos no enviados
+            // Cargar el producto existente
             Producto existente = productoService.findProductoById(prod.getId_producto());
             if (existente == null) {
                 resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
                 sendError(resp, "Producto no encontrado");
                 return;
             }
-            
+
             // Actualizar solo los campos enviados (si vienen null, mantener los existentes)
             if (jsonNode.has("nombre") && prod.getNombre() != null) {
                 existente.setNombre(prod.getNombre());
@@ -160,9 +177,11 @@ public class ProductoServlet extends HttpServlet {
             sendSuccess(resp, actualizado);
 
         } catch (com.fasterxml.jackson.core.JsonProcessingException ex) {
+            logger.severe("[" + CODIGO_LOG + "012] ERROR JSON doPut Productos: " + ex.getMessage());
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             sendError(resp, "Error en el formato JSON: " + ex.getMessage());
         } catch (Exception ex) {
+            logger.severe("[" + CODIGO_LOG + "013] ERROR doPut Productos: " + ex.getMessage());
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             sendError(resp, ex.getMessage());
         }
@@ -174,6 +193,8 @@ public class ProductoServlet extends HttpServlet {
     @Override
     protected void doDelete(HttpServletRequest req, HttpServletResponse resp)
             throws IOException {
+
+        logger.info("[" + CODIGO_LOG + "004] doDelete Productos - inicio. id=" + req.getParameter("id"));
 
         resp.setContentType("application/json");
         resp.setCharacterEncoding("UTF-8");
@@ -188,7 +209,7 @@ public class ProductoServlet extends HttpServlet {
             }
 
             Integer id = Integer.parseInt(idParam);
-            
+
             // Verificar que el producto existe antes de eliminar
             Producto prod = productoService.findProductoById(id);
             if (prod == null) {
@@ -196,16 +217,18 @@ public class ProductoServlet extends HttpServlet {
                 sendError(resp, "Producto no encontrado");
                 return;
             }
-            
+
             productoService.deleteProducto(id);
 
             // Devolver null en data para indicar éxito sin datos
             sendSuccess(resp, null);
 
         } catch (NumberFormatException ex) {
+            logger.severe("[" + CODIGO_LOG + "014] ERROR doDelete Productos - ID inválido: " + ex.getMessage());
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             sendError(resp, "ID inválido: debe ser un número");
         } catch (Exception ex) {
+            logger.severe("[" + CODIGO_LOG + "015] ERROR doDelete Productos: " + ex.getMessage());
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             sendError(resp, ex.getMessage());
         }
@@ -215,6 +238,7 @@ public class ProductoServlet extends HttpServlet {
     // Helpers
     // ============================================================
     private String readBody(HttpServletRequest req) throws IOException {
+        logger.fine("[" + CODIGO_LOG + "005] readBody Productos - leyendo cuerpo de la petición");
         StringBuilder sb = new StringBuilder();
         try (BufferedReader br = req.getReader()) {
             String line;
@@ -224,10 +248,12 @@ public class ProductoServlet extends HttpServlet {
     }
 
     private void sendSuccess(HttpServletResponse resp, Object data) throws IOException {
+        logger.fine("[" + CODIGO_LOG + "006] sendSuccess Productos - enviando respuesta de éxito");
         resp.getWriter().write(JsonUtil.toJson(new Response(true, data)));
     }
 
     private void sendError(HttpServletResponse resp, String msg) throws IOException {
+        logger.fine("[" + CODIGO_LOG + "007] sendError Productos - enviando error: " + msg);
         resp.getWriter().write(JsonUtil.toJson(new Response(false, new ErrorMsg(msg))));
     }
 

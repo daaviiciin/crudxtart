@@ -4,106 +4,103 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.logging.Logger;
 
-import com.example.crudxtart.models.Cliente;
 import com.example.crudxtart.models.Empleado;
-import com.example.crudxtart.service.ClienteService;
 import com.example.crudxtart.service.EmpleadoService;
 import com.example.crudxtart.utils.JsonUtil;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import jakarta.inject.Inject;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
 
-@WebServlet("/auth/login")
+@WebServlet("/login")
 public class LoginServlet extends HttpServlet {
 
-
-    // 1º Cambio para el log de errores
+    // ============================================================
+    // LOG + CÓDIGO IDENTIFICADOR
+    // ============================================================
     private static final Logger logger = Logger.getLogger(LoginServlet.class.getName());
-    private static final String CODIGO_LOG = "CTL-LGN-";
+    private static final String CODIGO_LOG = "CTL-LOG-";
 
     @Inject
     private EmpleadoService empleadoService;
 
-    @Inject
-    private ClienteService clienteService;
-
+    // ============================================================
+    // POST (LOGIN)
+    // ============================================================
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp)
             throws IOException {
 
-        logger.info("[" + CODIGO_LOG + "002] doPost - inicio"); // CAMBIO LOG
-        resp.setContentType("application/json;charset=UTF-8");
+        logger.info("[" + CODIGO_LOG + "001] doPost Login - inicio");
+        resp.setContentType("application/json");
+        resp.setCharacterEncoding("UTF-8");
 
         try {
-            LoginRequest data = JsonUtil.fromJson(readBody(req), LoginRequest.class);
+            // Leer body JSON
+            String body = readBody(req);
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode jsonNode = mapper.readTree(body);
 
-            if (data == null || data.email == null || data.password == null) {
-                sendError(resp, "Email y password requeridos");
+            // Validar campos
+            String email = jsonNode.has("email") && jsonNode.get("email").isTextual()
+                    ? jsonNode.get("email").asText()
+                    : null;
+
+            String password = jsonNode.has("password") && jsonNode.get("password").isTextual()
+                    ? jsonNode.get("password").asText()
+                    : null;
+
+            if (email == null || password == null) {
+                logger.severe("[" + CODIGO_LOG + "002] ERROR - Datos inválidos en login");
+                resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                sendError(resp, "Debe enviar 'email' y 'password'");
                 return;
             }
 
-            // =====================================================
-            // LOGIN EMPLEADO
-            // =====================================================
-            Empleado emp = empleadoService.findEmpleadoByEmail(data.email);
+            logger.info("[" + CODIGO_LOG + "003] Validando credenciales de: " + email);
 
-            if (emp != null && emp.getPassword().equals(data.password)) {
+            // Buscar empleado
+            Empleado empleado = empleadoService.findEmpleadoByEmail(email);
 
-                HttpSession session = req.getSession(true);
-                session.setAttribute("userId", emp.getId_empleado());
-                session.setAttribute("rol", emp.getId_rol().getNombre_rol());
-                session.setAttribute("tipo", "empleado");
-
-                sendSuccess(resp, new UserResponse(
-                        emp.getId_empleado(),
-                        emp.getNombre(),
-                        emp.getEmail(),
-                        emp.getId_rol().getNombre_rol(),
-                        "empleado"
-                ));
+            if (empleado == null) {
+                logger.severe("[" + CODIGO_LOG + "004] ERROR - Usuario no encontrado");
+                resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
+                sendError(resp, "Usuario no encontrado");
                 return;
             }
 
-            // =====================================================
-            // LOGIN CLIENTE
-            // =====================================================
-            Cliente cli = clienteService.findClienteByEmail(data.email);
-
-            if (cli != null && cli.getPassword().equals(data.password)) {
-
-                HttpSession session = req.getSession(true);
-                session.setAttribute("userId", cli.getId_cliente());
-                session.setAttribute("rol", "cliente");
-                session.setAttribute("tipo", "cliente");
-
-                sendSuccess(resp, new UserResponse(
-                        cli.getId_cliente(),
-                        cli.getNombre(),
-                        cli.getEmail(),
-                        "cliente",
-                        "cliente"
-                ));
+            // Validar password
+            if (!empleado.getPassword().equals(password)) {
+                logger.severe("[" + CODIGO_LOG + "005] ERROR - Password incorrecta");
+                resp.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                sendError(resp, "Contraseña incorrecta");
                 return;
             }
 
-            // =====================================================
-            // Credenciales incorrectas
-            // =====================================================
-            sendError(resp, "Credenciales incorrectas");
+            logger.info("[" + CODIGO_LOG + "006] Login exitoso para: " + email);
 
+            sendSuccess(resp, empleado);
+
+        } catch (com.fasterxml.jackson.core.JsonProcessingException ex) {
+            logger.severe("[" + CODIGO_LOG + "007] ERROR JSON Login: " + ex.getMessage());
+            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            sendError(resp, "Error en el formato JSON");
         } catch (Exception ex) {
+            logger.severe("[" + CODIGO_LOG + "008] ERROR general Login: " + ex.getMessage());
+            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             sendError(resp, ex.getMessage());
         }
     }
 
     // ============================================================
-    // Helpers comunes
+    // Helpers
     // ============================================================
     private String readBody(HttpServletRequest req) throws IOException {
+        logger.fine("[" + CODIGO_LOG + "009] readBody - leyendo body petición");
         StringBuilder sb = new StringBuilder();
         try (BufferedReader br = req.getReader()) {
             String line;
@@ -112,29 +109,24 @@ public class LoginServlet extends HttpServlet {
         return sb.toString();
     }
 
-    private void sendSuccess(HttpServletResponse resp, Object dataObj) throws IOException {
-        resp.getWriter().write(JsonUtil.toJson(new ResponseWrapper(true, dataObj)));
+    private void sendSuccess(HttpServletResponse resp, Object data) throws IOException {
+        logger.fine("[" + CODIGO_LOG + "010] sendSuccess - login OK");
+        resp.getWriter().write(JsonUtil.toJson(new Response(true, data)));
     }
 
     private void sendError(HttpServletResponse resp, String msg) throws IOException {
-        resp.getWriter().write(JsonUtil.toJson(new ResponseWrapper(false, new ErrorWrapper(msg))));
+        logger.fine("[" + CODIGO_LOG + "011] sendError - " + msg);
+        resp.getWriter().write(JsonUtil.toJson(new Response(false, new ErrorMsg(msg))));
     }
 
     // ============================================================
-    // Clases DTO internas
+    // Objetos respuesta JSON
     // ============================================================
-    private static class LoginRequest {
-        String email;
-        String password;
-
-        public String getEmail() { return email; }
-        public String getPassword() { return password; }
-    }
-
-    private static class ResponseWrapper {
+    private static class Response {
         final boolean success;
         final Object data;
-        ResponseWrapper(boolean success, Object data) {
+
+        Response(boolean success, Object data) {
             this.success = success;
             this.data = data;
         }
@@ -143,34 +135,13 @@ public class LoginServlet extends HttpServlet {
         public Object getData() { return data; }
     }
 
-    private static class ErrorWrapper {
+    private static class ErrorMsg {
         final String error;
-        ErrorWrapper(String error) {
+
+        ErrorMsg(String error) {
             this.error = error;
         }
 
         public String getError() { return error; }
-    }
-
-    private static class UserResponse {
-        final int id;
-        final String nombre;
-        final String email;
-        final String rol;
-        final String tipo;
-
-        UserResponse(int id, String nombre, String email, String rol, String tipo) {
-            this.id = id;
-            this.nombre = nombre;
-            this.email = email;
-            this.rol = rol;
-            this.tipo = tipo;
-        }
-
-        public int getId() { return id; }
-        public String getNombre() { return nombre; }
-        public String getEmail() { return email; }
-        public String getRol() { return rol; }
-        public String getTipo() { return tipo; }
     }
 }
