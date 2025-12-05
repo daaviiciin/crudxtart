@@ -67,24 +67,6 @@ public class PagosTest
             );
    });
 
-        Factura factura2 = new Factura();
-        factura2.setId_factura(1);
-
-        Pagos nuevoPago1 = new Pagos();
-        nuevoPago1.setFactura(factura2);
-        nuevoPago1.setFecha_pago(LocalDate.of(2022,4,04));
-        nuevoPago1.setImporte(123.45);
-        nuevoPago1.setMetodo_pago("tarjeta");
-        nuevoPago1.setEstado("pendiente");
-
-        Pagos pagoGuardado1 = pagosService.createPagos(nuevoPago1);
-        System.out.println("==== NUEVO PAGO CREADO ====");
-        System.out.println("Nuevo ID: " + pagoGuardado1.getId_pago());
-
         pagosService.deletePagos(9);
-
-
-
-
     }
 }

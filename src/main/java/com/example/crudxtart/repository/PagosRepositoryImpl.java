@@ -120,7 +120,6 @@ public class PagosRepositoryImpl implements PagosRepository
                 em.remove(p);
             }
             em.getTransaction().commit();
-            return;
         }catch (Exception ex)
         {
             if (em.getTransaction().isActive()) {
@@ -140,7 +139,6 @@ public class PagosRepositoryImpl implements PagosRepository
             em.getTransaction().begin();
             em.merge(p);
             em.getTransaction().commit();
-
         }catch(Exception ex)
         {
             if (em.getTransaction().isActive()) {
