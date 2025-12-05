@@ -74,7 +74,7 @@ public class ProductoRepositoryImpl implements ProductoRepository {
                 em.getTransaction().rollback();
             }
             ex.printStackTrace();
-            throw new RuntimeException("Error al actualizar empleado: " + ex.getMessage(), ex);
+            throw new RuntimeException("Error al guardar producto: " + ex.getMessage(), ex);
         }
 
     }
@@ -107,6 +107,8 @@ public class ProductoRepositoryImpl implements ProductoRepository {
         {
             em.getTransaction().begin();
             Producto actualizado = em.merge(p);
+            em.flush();
+            em.refresh(actualizado);
             em.getTransaction().commit();
             return actualizado;
         }catch (Exception ex)

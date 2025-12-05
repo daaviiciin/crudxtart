@@ -53,7 +53,7 @@ public class PagosService
     public Pagos upLocalDatePagos(Pagos p)
     {
         validarpagos(p);
-        return  pagosRepository.upLocalDatePagos(p);
+        return  pagosRepository.updatePagos(p);
     }
 
     public void deletePagos(int id)

@@ -144,7 +144,7 @@ public class ClienteRepositoryImpl implements ClienteRepository {
                 em.getTransaction().rollback();
             }
             ex.printStackTrace();
-            throw new RuntimeException("Error al actualizar empleado: " + ex.getMessage(), ex);
+            throw new RuntimeException("Error al actualizar cliente: " + ex.getMessage(), ex);
 
         }
     }
@@ -174,10 +174,12 @@ public class ClienteRepositoryImpl implements ClienteRepository {
     // UPDATE
     // ============================================================
     @Override
-    public Cliente upLocalDateCliente(Cliente c) {
+    public Cliente upDateCliente(Cliente c) {
         try {
             em.getTransaction().begin();
             Cliente actualizado = em.merge(c);
+            em.flush();
+            em.refresh(actualizado);
             em.getTransaction().commit();
             return actualizado;
         } catch (Exception ex) {

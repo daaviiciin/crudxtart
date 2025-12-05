@@ -66,10 +66,6 @@ public class EmpleadoRepositoryImpl implements EmpleadoRepository {
         }
     }
 
-//    @Override
-//    public List<Empleado> findCEmpleadoByFilters(String nombre, String email, String telefono) {
-//        return List.of();
-//    }
 
     // ============================================================
     // CREATE
@@ -106,7 +102,7 @@ public class EmpleadoRepositoryImpl implements EmpleadoRepository {
                 em.getTransaction().rollback();
             }
             ex.printStackTrace();
-            throw new RuntimeException("Error al actualizar empleado: " + ex.getMessage(), ex);
+            throw new RuntimeException("Error al guardar empleado: " + ex.getMessage(), ex);
         }
     }
 
@@ -139,6 +135,8 @@ public class EmpleadoRepositoryImpl implements EmpleadoRepository {
         try {
             em.getTransaction().begin();
             Empleado actualizado = em.merge(e);
+            em.flush();
+            em.refresh(actualizado);
             em.getTransaction().commit();
             return actualizado;
         } catch (Exception ex) {

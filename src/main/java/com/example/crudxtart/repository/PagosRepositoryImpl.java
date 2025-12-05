@@ -84,7 +84,7 @@ public class PagosRepositoryImpl implements PagosRepository
                 em.getTransaction().rollback();
             }
             ex.printStackTrace();
-            throw new RuntimeException("Error al actualizar empleado: " + ex.getMessage(), ex);
+            throw new RuntimeException("Error al crear un pago: " + ex.getMessage(), ex);
         }
         return p;
     }
@@ -103,7 +103,7 @@ public class PagosRepositoryImpl implements PagosRepository
                 em.getTransaction().rollback();
             }
             ex.printStackTrace();
-            throw new RuntimeException("Error al actualizar empleado: " + ex.getMessage(), ex);
+            throw new RuntimeException("Error al guardar un pago : " + ex.getMessage(), ex);
         }
 
     }
@@ -126,18 +126,20 @@ public class PagosRepositoryImpl implements PagosRepository
                 em.getTransaction().rollback();
             }
             ex.printStackTrace();
-            throw new RuntimeException("Error al actualizar empleado: " + ex.getMessage(), ex);
+            throw new RuntimeException("Error al borrar un pago : " + ex.getMessage(), ex);
         }
 
     }
 
     @Override
-    public Pagos upLocalDatePagos(Pagos p)
+    public Pagos updatePagos(Pagos p)
     {
         try
         {
             em.getTransaction().begin();
-            em.merge(p);
+            Pagos actualizado = em.merge(p);
+            em.flush();
+            em.refresh(actualizado);
             em.getTransaction().commit();
         }catch(Exception ex)
         {
@@ -145,7 +147,7 @@ public class PagosRepositoryImpl implements PagosRepository
                 em.getTransaction().rollback();
             }
             ex.printStackTrace();
-            throw new RuntimeException("Error al actualizar empleado: " + ex.getMessage(), ex);
+            throw new RuntimeException("Error al actualizar un pago: " + ex.getMessage(), ex);
         }
         return p;
     }

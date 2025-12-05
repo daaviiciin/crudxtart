@@ -66,7 +66,7 @@ public class FacturaRepositoryImpl implements FacturaRepository {
                 em.getTransaction().rollback();
             }
             ex.printStackTrace();
-            throw new RuntimeException("Error al actualizar empleado: " + ex.getMessage(), ex);
+            throw new RuntimeException("Error al crear la factura: " + ex.getMessage(), ex);
         }
     }
 
@@ -86,7 +86,7 @@ public class FacturaRepositoryImpl implements FacturaRepository {
                 em.getTransaction().rollback();
             }
             ex.printStackTrace();
-            throw new RuntimeException("Error al actualizar empleado: " + ex.getMessage(), ex);
+            throw new RuntimeException("Error al guardar la factura: " + ex.getMessage(), ex);
         }
     }
 
@@ -108,7 +108,7 @@ public class FacturaRepositoryImpl implements FacturaRepository {
                 em.getTransaction().rollback();
             }
             ex.printStackTrace();
-            throw new RuntimeException("Error al actualizar empleado: " + ex.getMessage(), ex);
+            throw new RuntimeException("Error al borrar la factura: " + ex.getMessage(), ex);
         }
     }
 
@@ -118,7 +118,9 @@ public class FacturaRepositoryImpl implements FacturaRepository {
         try
         {
             em.getTransaction().begin();
-            em.merge(f);
+            Factura actualizado = em.merge(f);
+            em.flush();
+            em.refresh(actualizado);
             em.getTransaction().commit();
             return f;
         }catch(Exception ex)
@@ -127,7 +129,7 @@ public class FacturaRepositoryImpl implements FacturaRepository {
                 em.getTransaction().rollback();
             }
             ex.printStackTrace();
-            throw new RuntimeException("Error al actualizar empleado: " + ex.getMessage(), ex);
+            throw new RuntimeException("Error al actualizar la factura: " + ex.getMessage(), ex);
         }
 
     }

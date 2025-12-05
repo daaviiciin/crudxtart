@@ -90,7 +90,7 @@ public class PresupuestosRepositoryImpl implements PresupuestosRepository {
                 em.getTransaction().rollback();
             }
             ex.printStackTrace();
-            throw new RuntimeException("Error al crear presupuesto: " + ex.getMessage(), ex);
+            throw new RuntimeException("Error al guardar presupuesto: " + ex.getMessage(), ex);
         }
     }
 
@@ -122,8 +122,8 @@ public class PresupuestosRepositoryImpl implements PresupuestosRepository {
         {
             em.getTransaction().begin();
             Presupuestos actualizado = em.merge(p);
-            em.flush(); // Forzar sincronización con la BD
-            em.refresh(actualizado); // Refrescar para obtener valores actualizados (como fecha_cierre automática)
+            em.flush();
+            em.refresh(actualizado);
             em.getTransaction().commit();
             return actualizado;
         }catch (Exception ex)

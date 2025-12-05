@@ -11,6 +11,6 @@ public interface PagosRepository
     public List<Pagos> findPagosByFacturaId(Integer facturaId);
     public void savePagos(Pagos p);
     public void deletebyid(Integer id);
-    public Pagos upLocalDatePagos(Pagos p);
+    public Pagos updatePagos(Pagos p);
     public Pagos createPagos(Pagos p);
 }

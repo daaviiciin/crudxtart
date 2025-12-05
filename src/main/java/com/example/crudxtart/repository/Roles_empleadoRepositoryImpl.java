@@ -37,7 +37,7 @@ public class Roles_empleadoRepositoryImpl implements Roles_empleadoRepository {
                 em.getTransaction().rollback();
             }
             ex.printStackTrace();
-            throw new RuntimeException("Error al actualizar empleado: " + ex.getMessage(), ex);
+            throw new RuntimeException("Error al busacar un rol: " + ex.getMessage(), ex);
         }
     }
 
@@ -56,7 +56,7 @@ public class Roles_empleadoRepositoryImpl implements Roles_empleadoRepository {
                 em.getTransaction().rollback();
             }
             ex.printStackTrace();
-            throw new RuntimeException("Error al actualizar empleado: " + ex.getMessage(), ex);
+            throw new RuntimeException("Error al crear un rol: " + ex.getMessage(), ex);
         }
     }
 
@@ -75,7 +75,7 @@ public class Roles_empleadoRepositoryImpl implements Roles_empleadoRepository {
                 em.getTransaction().rollback();
             }
             ex.printStackTrace();
-            throw new RuntimeException("Error al actualizar empleado: " + ex.getMessage(), ex);
+            throw new RuntimeException("Error al guardar un rol : " + ex.getMessage(), ex);
         }
 
     }
@@ -97,7 +97,7 @@ public class Roles_empleadoRepositoryImpl implements Roles_empleadoRepository {
                 em.getTransaction().rollback();
             }
             ex.printStackTrace();
-            throw new RuntimeException("Error al actualizar empleado: " + ex.getMessage(), ex);
+            throw new RuntimeException("Error al borrar un rol : " + ex.getMessage(), ex);
         }
 
     }
@@ -109,7 +109,9 @@ public class Roles_empleadoRepositoryImpl implements Roles_empleadoRepository {
         try
         {
             em.getTransaction().begin();
-            em.merge(r);
+            Roles_empleado actualizado = em.merge(r);
+            em.flush();
+            em.refresh(actualizado);
             em.getTransaction().commit();
             return r;
         }catch (Exception ex)
@@ -118,7 +120,7 @@ public class Roles_empleadoRepositoryImpl implements Roles_empleadoRepository {
                 em.getTransaction().rollback();
             }
             ex.printStackTrace();
-            throw new RuntimeException("Error al actualizar empleado: " + ex.getMessage(), ex);
+            throw new RuntimeException("Error al actualizar un rol : " + ex.getMessage(), ex);
         }
     }
 }

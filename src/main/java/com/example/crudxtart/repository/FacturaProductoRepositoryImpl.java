@@ -42,7 +42,7 @@ public class FacturaProductoRepositoryImpl implements FacturaProductoRepository 
                 em.getTransaction().rollback();
             }
             ex.printStackTrace();
-            throw new RuntimeException("Error al actualizar empleado: " + ex.getMessage(), ex);
+            throw new RuntimeException("Error al buscar la factura del producto: " + ex.getMessage(), ex);
         }
 
     }
@@ -62,7 +62,7 @@ public class FacturaProductoRepositoryImpl implements FacturaProductoRepository 
                 em.getTransaction().rollback();
             }
             ex.printStackTrace();
-            throw new RuntimeException("Error al actualizar empleado: " + ex.getMessage(), ex);
+            throw new RuntimeException("Error al crear la factura del producto: " + ex.getMessage(), ex);
         }
 
     }
@@ -81,7 +81,7 @@ public class FacturaProductoRepositoryImpl implements FacturaProductoRepository 
                 em.getTransaction().rollback();
             }
             ex.printStackTrace();
-            throw new RuntimeException("Error al actualizar empleado: " + ex.getMessage(), ex);
+            throw new RuntimeException("Error al guardar la factura del producto: " + ex.getMessage(), ex);
         }
     }
 
@@ -101,7 +101,7 @@ public class FacturaProductoRepositoryImpl implements FacturaProductoRepository 
                 em.getTransaction().rollback();
             }
             ex.printStackTrace();
-            throw new RuntimeException("Error al actualizar empleado: " + ex.getMessage(), ex);
+            throw new RuntimeException("Error al borrar la factura del producto: " + ex.getMessage(), ex);
         }
 
     }
@@ -112,7 +112,9 @@ public class FacturaProductoRepositoryImpl implements FacturaProductoRepository 
         try
         {
             em.getTransaction().begin();
-            em.merge(fp);
+            FacturaProducto actualizado = em.merge(fp);
+            em.flush();
+            em.refresh(actualizado);
             em.getTransaction().commit();
             return fp;
         }catch (Exception ex)
@@ -121,7 +123,7 @@ public class FacturaProductoRepositoryImpl implements FacturaProductoRepository 
                 em.getTransaction().rollback();
             }
             ex.printStackTrace();
-            throw new RuntimeException("Error al actualizar empleado: " + ex.getMessage(), ex);
+            throw new RuntimeException("Error al actualizar la factura del producto: " + ex.getMessage(), ex);
         }
 
     }

@@ -18,7 +18,7 @@ public interface ClienteRepository {
 
     public void deletebyid(Integer id);
 
-    public Cliente upLocalDateCliente(Cliente c);
+    public Cliente upDateCliente(Cliente c);
 
     public Cliente createCliente(Cliente c);
 }

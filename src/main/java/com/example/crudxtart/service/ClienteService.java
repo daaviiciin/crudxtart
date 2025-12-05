@@ -36,7 +36,7 @@ public class ClienteService {
 
     public Cliente upLocalDateCliente(Cliente c) {
         validarCliente(c);
-        return clienteRepository.upLocalDateCliente(c);
+        return clienteRepository.upDateCliente(c);
     }
 
     public void deleteCliente(Integer id) {
