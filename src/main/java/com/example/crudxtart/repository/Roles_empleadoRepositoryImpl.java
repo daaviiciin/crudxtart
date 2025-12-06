@@ -1,12 +1,12 @@
 package com.example.crudxtart.repository;
 
+import java.util.List;
+
 import com.example.crudxtart.models.Roles_empleado;
+
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
-import jakarta.transaction.Transactional;
-
-import java.util.List;
 
 @ApplicationScoped
 public class Roles_empleadoRepositoryImpl implements Roles_empleadoRepository {
@@ -18,8 +18,18 @@ public class Roles_empleadoRepositoryImpl implements Roles_empleadoRepository {
 
     @Override
     public List<Roles_empleado> findAllRoles_empleado() {
-        return em.createQuery("SELECT r FROM Roles_empleado r", Roles_empleado.class)
-                .getResultList();
+        java.util.logging.Logger logger = java.util.logging.Logger.getLogger(Roles_empleadoRepositoryImpl.class.getName());
+        logger.info("findAllRoles_empleado() - Inicio");
+        try {
+            List<Roles_empleado> roles = em.createQuery("SELECT r FROM Roles_empleado r", Roles_empleado.class)
+                    .getResultList();
+            logger.info("findAllRoles_empleado() - Encontrados " + roles.size() + " roles");
+            return roles;
+        } catch (Exception ex) {
+            logger.severe("findAllRoles_empleado() - Error: " + ex.getMessage());
+            ex.printStackTrace();
+            throw new RuntimeException("Error al buscar roles: " + ex.getMessage(), ex);
+        }
     }
 
     @Override

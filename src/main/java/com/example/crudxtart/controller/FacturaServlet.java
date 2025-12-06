@@ -2,18 +2,18 @@ package com.example.crudxtart.controller;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.util.logging.Logger;
 import java.util.List;
+import java.util.logging.Logger;
 
+import com.example.crudxtart.models.Cliente;
+import com.example.crudxtart.models.Empleado;
 import com.example.crudxtart.models.Factura;
 import com.example.crudxtart.models.FacturaProducto;
-import com.example.crudxtart.models.Empleado;
-import com.example.crudxtart.models.Cliente;
 import com.example.crudxtart.models.Producto;
-import com.example.crudxtart.service.FacturaService;
-import com.example.crudxtart.service.FacturaProductoService;
-import com.example.crudxtart.service.EmpleadoService;
 import com.example.crudxtart.service.ClienteService;
+import com.example.crudxtart.service.EmpleadoService;
+import com.example.crudxtart.service.FacturaProductoService;
+import com.example.crudxtart.service.FacturaService;
 import com.example.crudxtart.service.ProductoService;
 import com.example.crudxtart.utils.JsonUtil;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -109,13 +109,15 @@ public class FacturaServlet extends HttpServlet {
             fac.setId_factura(null); // Asegurar que el ID sea null para crear nuevo registro
 
             // Extraer y validar campos básicos
+            // num_factura es opcional - se generará automáticamente si no se proporciona
             if (jsonNode.has("num_factura") && jsonNode.get("num_factura").isTextual()) {
-                fac.setNum_factura(jsonNode.get("num_factura").asText());
-            } else {
-                resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-                sendError(resp, "El campo 'num_factura' es obligatorio");
-                return;
+                String numFactura = jsonNode.get("num_factura").asText();
+                if (numFactura != null && !numFactura.trim().isEmpty()) {
+                    fac.setNum_factura(numFactura.trim());
+                }
+                // Si viene vacío o null, se generará automáticamente en el servicio
             }
+            // Si no viene num_factura, se generará automáticamente en el servicio
 
             if (jsonNode.has("total") && jsonNode.get("total").isNumber()) {
                 fac.setTotal(jsonNode.get("total").asDouble());

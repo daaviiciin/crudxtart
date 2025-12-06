@@ -1,12 +1,13 @@
 package com.example.crudxtart.service;
 
-import com.example.crudxtart.models.Empleado;
-import com.example.crudxtart.repository.EmpleadoRepository;
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
-
 import java.util.List;
 import java.util.logging.Logger;
+
+import com.example.crudxtart.models.Empleado;
+import com.example.crudxtart.repository.EmpleadoRepository;
+
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 
 @ApplicationScoped
 public class EmpleadoService {
@@ -67,6 +68,16 @@ public class EmpleadoService {
         // Password es obligatorio en BD, pero si no viene se establece un valor por defecto
         if (empleado.getPassword() == null || empleado.getPassword().trim().isEmpty()) {
             empleado.setPassword("empleado123"); // Valor por defecto
+        }
+
+        // Estado es obligatorio en BD, pero si no viene se establece un valor por defecto
+        if (empleado.getEstado() == null || empleado.getEstado().trim().isEmpty()) {
+            empleado.setEstado("activo"); // Valor por defecto
+        }
+
+        // Fecha de ingreso es obligatoria en BD, pero si no viene se establece la fecha actual
+        if (empleado.getFecha_ingreso() == null) {
+            empleado.setFecha_ingreso(java.time.LocalDate.now()); // Valor por defecto: fecha actual
         }
 
         if (empleado.getTelefono() != null && empleado.getTelefono().length() > 20) {

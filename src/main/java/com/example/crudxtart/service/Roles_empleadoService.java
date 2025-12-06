@@ -1,12 +1,13 @@
 package com.example.crudxtart.service;
 
-import com.example.crudxtart.models.Roles_empleado;
-import com.example.crudxtart.repository.Roles_empleadoRepository;
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
-
 import java.util.List;
 import java.util.logging.Logger;
+
+import com.example.crudxtart.models.Roles_empleado;
+import com.example.crudxtart.repository.Roles_empleadoRepository;
+
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 
 @ApplicationScoped
 public class Roles_empleadoService {
@@ -19,8 +20,10 @@ public class Roles_empleadoService {
     Roles_empleadoRepository roles_empleadoRepository;
 
     public List<Roles_empleado> findAllRoles_empleado() {
-        logger.info("[" + CODIGO_LOG + "001] findAllRoles_empleado() - Inicio"); // CAMBIO LOG
-        return roles_empleadoRepository.findAllRoles_empleado();
+        logger.info("[" + CODIGO_LOG + "001] findAllRoles_empleado() - Inicio");
+        List<Roles_empleado> roles = roles_empleadoRepository.findAllRoles_empleado();
+        logger.info("[" + CODIGO_LOG + "002] findAllRoles_empleado() - Resultado: " + (roles != null ? roles.size() : "null") + " roles");
+        return roles;
     }
 
     public Roles_empleado findRolById(Integer id) {

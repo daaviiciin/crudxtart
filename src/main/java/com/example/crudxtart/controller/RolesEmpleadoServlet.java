@@ -1,18 +1,19 @@
 package com.example.crudxtart.controller;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.util.List;
+import java.util.logging.Logger;
+
 import com.example.crudxtart.models.Roles_empleado;
 import com.example.crudxtart.service.Roles_empleadoService;
 import com.example.crudxtart.utils.JsonUtil;
+
 import jakarta.inject.Inject;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.util.List;
-import java.util.logging.Logger;
 
 @WebServlet("/roles_empleado")
 public class RolesEmpleadoServlet extends HttpServlet {
@@ -54,6 +55,7 @@ public class RolesEmpleadoServlet extends HttpServlet {
             }
 
             List<Roles_empleado> lista = rolesService.findAllRoles_empleado();
+            logger.info("[" + CODIGO_LOG + "010] doGet RolesEmpleado - Lista obtenida: " + (lista != null ? lista.size() : "null") + " roles");
             sendSuccess(resp, lista);
 
         } catch (NumberFormatException ex) {
@@ -209,7 +211,10 @@ public class RolesEmpleadoServlet extends HttpServlet {
 
     private void sendSuccess(HttpServletResponse resp, Object data) throws IOException {
         logger.fine("[" + CODIGO_LOG + "006] sendSuccess RolesEmpleado - enviando respuesta de éxito");
-        resp.getWriter().write(JsonUtil.toJson(new Response(true, data)));
+        Response response = new Response(true, data);
+        String json = JsonUtil.toJson(response);
+        logger.info("[" + CODIGO_LOG + "011] sendSuccess RolesEmpleado - JSON generado: " + json);
+        resp.getWriter().write(json);
     }
 
     private void sendError(HttpServletResponse resp, String msg) throws IOException {
@@ -221,10 +226,13 @@ public class RolesEmpleadoServlet extends HttpServlet {
         final boolean success;
         final Object data;
         Response(boolean success, Object data) { this.success = success; this.data = data; }
+        public boolean isSuccess() { return success; }
+        public Object getData() { return data; }
     }
 
     private static class ErrorMsg {
         final String error;
         ErrorMsg(String error) { this.error = error; }
+        public String getError() { return error; }
     }
 }
