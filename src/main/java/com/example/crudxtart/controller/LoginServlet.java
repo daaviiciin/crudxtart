@@ -4,10 +4,10 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.logging.Logger;
 
-import com.example.crudxtart.models.Empleado;
 import com.example.crudxtart.models.Cliente;
-import com.example.crudxtart.service.EmpleadoService;
+import com.example.crudxtart.models.Empleado;
 import com.example.crudxtart.service.ClienteService;
+import com.example.crudxtart.service.EmpleadoService;
 import com.example.crudxtart.utils.JsonUtil;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -17,6 +17,7 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 
 @WebServlet("/login")
 public class LoginServlet extends HttpServlet {
@@ -81,6 +82,17 @@ public class LoginServlet extends HttpServlet {
                 }
                 
                 logger.info("[" + CODIGO_LOG + "006] Login exitoso (empleado) para: " + email);
+                
+                // Crear sesión HTTP y guardar datos del usuario
+                HttpSession session = req.getSession(true);
+                session.setAttribute("user_id", empleado.getId_empleado());
+                session.setAttribute("user_email", empleado.getEmail());
+                session.setAttribute("user_nombre", empleado.getNombre());
+                session.setAttribute("user_rol", empleado.getId_rol() != null ? empleado.getId_rol().getNombre_rol() : "EMPLEADO");
+                session.setAttribute("user_tipo", "empleado");
+                session.setMaxInactiveInterval(30 * 60); // 30 minutos de inactividad
+                
+                logger.info("[" + CODIGO_LOG + "007] Sesión creada para empleado ID: " + empleado.getId_empleado());
                 sendSuccess(resp, empleado);
                 return;
             }
@@ -104,6 +116,17 @@ public class LoginServlet extends HttpServlet {
             }
             
             logger.info("[" + CODIGO_LOG + "006] Login exitoso (cliente) para: " + email);
+            
+            // Crear sesión HTTP y guardar datos del usuario
+            HttpSession session = req.getSession(true);
+            session.setAttribute("user_id", cliente.getId_cliente());
+            session.setAttribute("user_email", cliente.getEmail());
+            session.setAttribute("user_nombre", cliente.getNombre());
+            session.setAttribute("user_rol", "CLIENTE");
+            session.setAttribute("user_tipo", "cliente");
+            session.setMaxInactiveInterval(30 * 60); // 30 minutos de inactividad
+            
+            logger.info("[" + CODIGO_LOG + "007] Sesión creada para cliente ID: " + cliente.getId_cliente());
             sendSuccess(resp, cliente);
 
         } catch (com.fasterxml.jackson.core.JsonProcessingException ex) {
